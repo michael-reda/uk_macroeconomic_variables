@@ -26,12 +26,16 @@ ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx"
 # quarterly_public_sector_spending : KX5Q
 # quarterly_public_sector_receipts : JW2O
 # public_sector_net_debt : HF6XX
+public_sector_finances_df <- readxl::read_xlsx("data/ons_public_sector_finances_quarterly.xlsx")
 
 # ONS gross fixed capital formation
 # https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/grossfixedcapitalformationbysectorandasset
+# sheet = "G1_CVM_SA_Q_levels" array = "a6:m121"
+gfcf_df <- readxl::read_xlsx("data/ons_grossfixedcapitalformationbysectorandasset.xlsx", sheet = "G1_CVM_SA_Q_levels", range = "a6:m121")
 
 # ONS UK housebuilding
 # https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ukhousebuildingpermanentdwellingsstartedandcompleted
+ #"1a" "6a:195j"
 
 # ONS Capital Account: Balance: CP NSA
 # https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/timeseries/fkmj/pnbp
