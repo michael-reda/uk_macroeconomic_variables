@@ -9,6 +9,7 @@ library(tidyverse)
 # XUMASER Monthly average Spot exchange rates, Sterling into Euro
 boe_exchg_interest_df <- read.csv("data/boe_df.csv")
 
+
 # Institute for Fiscal Studies living standards, poverty and inequality data
 # https://ifs.org.uk/living-standards-poverty-and-inequality-uk
 # net [of taxes and inclusive of benefits] equivalised household income, before housing costs, inflation adjusted.
@@ -26,6 +27,44 @@ ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx"
 # quarterly_public_sector_receipts : JW2O
 # public_sector_net_debt : HF6XX
 
+# ONS gross fixed capital formation
+# https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/grossfixedcapitalformationbysectorandasset
 
+# ONS UK housebuilding
+# https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ukhousebuildingpermanentdwellingsstartedandcompleted
+
+# ONS Capital Account: Balance: CP NSA
+# https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/timeseries/fkmj/pnbp
+
+# ONS trade stats
+# https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/datasets/tradeingoodsmretsallbopeu2013timeseriesspreadsheet
+
+# ONS quarterly GDP in chained volume measures (2023 prices)
+# sheet= "2018 -" array= "BH165:B286"
+# https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/realtimedatabaseforukgdpabmi
+
+# ONS CPI
+# https://www.ons.gov.uk/economy/inflationandpriceindices/datasets/consumerpriceindices
+
+# ONS Unemployment rate (aged 16 and over, seasonally adjusted): %
+# https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms
+
+# ONS population
+# https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/timeseries/ukpop/pop
+
+# trade intensity (% of GDP), World Bank
+# https://data.worldbank.org/indicator/NE.TRD.GNFS.ZS
+
+# Research and development expenditure (% of GDP), World Bank
+# https://data.worldbank.org/indicator/GB.XPD.RSDV.GD.ZS
+
+# Manufacturing value added (% of GDP), World Bank
+# https://data.worldbank.org/indicator/NV.IND.MANF.ZS?end=2024&start=1960&view=chart
+
+
+# Life expectancy, Our World in Data
+# Data source: Riley (2005); Zijdeman et al. (2015); HMD (2025); UN WPP (2024) – Learn more about this data
+# OurWorldinData.org/life-expectancy | CC BY
+# https://ourworldindata.org/life-expectancy
 
 
