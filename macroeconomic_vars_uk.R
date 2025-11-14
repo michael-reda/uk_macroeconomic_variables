@@ -28,24 +28,71 @@ ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx"
 # public_sector_net_debt : HF6XX
 public_sector_finances_df <- readxl::read_xlsx("data/ons_public_sector_finances_quarterly.xlsx")
 
+
 # ONS gross fixed capital formation
 # https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/grossfixedcapitalformationbysectorandasset
 # sheet = "G1_CVM_SA_Q_levels" array = "a6:m121"
 gfcf_df <- readxl::read_xlsx("data/ons_grossfixedcapitalformationbysectorandasset.xlsx", sheet = "G1_CVM_SA_Q_levels", range = "a6:m121")
 
+
 # ONS UK housebuilding
 # https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ukhousebuildingpermanentdwellingsstartedandcompleted
  #"1a" "6a:195j"
+housebuilding_df <- readxl::read_xlsx(path = "data/ons_ukhousebuilding.xlsx", sheet = "1a", range = "b6:j195")
+
 
 # ONS Capital Account: Balance: CP NSA
 # https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/timeseries/fkmj/pnbp
+capital_account_balance_df <- readr::read_csv(file = "data/ons_capital_account.csv")
 
-# ONS trade stats
+
+# ONS trade stats, 1997 - 2025, Chain Volume Measured, EU, non-EU, total, goods, services, imports, exports
 # https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/datasets/tradeingoodsmretsallbopeu2013timeseriesspreadsheet
+# row 817 - 1161
+# YW: Total Trade (TT): WW: Exports: BOP: CVM: SA
+# YX: Total Trade (TT): WW: Imports: BOP: CVM: SA
+# YY: Total Trade (TT): WW: Balance: BOP: CVM: SA
+
+# EK: Trade in Goods (T): WW: Imports: BOP: CVM: SA
+# EL: Trade in Goods (T): WW: Exports: BOP: CVM: SA
+# JG: Trade in Goods (T): WW: Balance: BOP: CVM: SA
+# JH:Trade in Goods (T): EU: Balance: BOP: CVM: SA
+# JI: Trade in Goods (T): Non-EU: Balance: BOP: CVM: SA
+# AER: Trade in Goods (T): EU: Exports: BOP: CVM: SA
+# AES: Trade in Goods (T): EU: Imports: BOP: CVM: SA
+# AET: Trade in Goods (T): Non-EU: Exports: BOP: CVM: SA
+# AEU: Trade in Goods (T): Non-EU: Imports: BOP: CVM: SA
+
+# Trade in services is not disaggregated by EU / non-EU.
+# YQ: Trade in Services (TS): WW: Exports: BOP: CVM: SA
+# YR: Trade in Services (TS): WW: Imports: BOP: CVM: SA
+# YS: Trade in Services (TS): WW: Balance: BOP: CVM: SA
+
+trade_balance_df <- readxl::read_xlsx("data/ons_uk_trade_stats.xlsx", sheet = "data", range = "a1:aeu1161")%>%
+  select(c("Title",
+           "Total Trade (TT): WW: Exports: BOP: CVM: SA",
+           "Total Trade (TT): WW: Imports: BOP: CVM: SA",
+           "Total Trade (TT): WW: Balance: BOP: CVM: SA",
+           "Trade in Goods (T): WW: Imports: BOP: CVM: SA",
+           "Trade in Goods (T): WW: Exports: BOP: CVM: SA", 
+           "Trade in Goods (T): WW: Balance: BOP: CVM: SA", 
+           "Trade in Goods (T): EU: Balance: BOP: CVM: SA", 
+           "Trade in Goods (T): Non-EU: Balance: BOP: CVM: SA", 
+           "Trade in Goods (T): EU: Exports: BOP: CVM: SA", 
+           "Trade in Goods (T): EU: Imports: BOP: CVM: SA", 
+           "Trade in Goods (T): Non-EU: Exports: BOP: CVM: SA", 
+           "Trade in Goods (T): Non-EU: Imports: BOP: CVM: SA", 
+           "Trade in Services (TS): WW: Exports: BOP: CVM: SA", 
+           "Trade in Services (TS): WW: Imports: BOP: CVM: SA", 
+           "Trade in Services (TS): WW: Balance: BOP: CVM: SA"))%>%
+  slice(817:1161)
+
 
 # ONS quarterly GDP in chained volume measures (2023 prices)
 # sheet= "2018 -" array= "BH165:B286"
 # https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/realtimedatabaseforukgdpabmi
+gdp_df <- readxl::read_xlsx("data/ons_uk_quarterly_GDP_real.xlsx", sheet = "2018 - ", range = "A4:BH286")%>%
+  select(1, 60)
 
 # ONS CPI
 # https://www.ons.gov.uk/economy/inflationandpriceindices/datasets/consumerpriceindices
