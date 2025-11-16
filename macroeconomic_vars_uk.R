@@ -1,6 +1,8 @@
 #install.packages("tidyverse")
 library(tidyverse)
 
+## read in data
+
 # Bank of England data: interest rates and exchange rates
 # https://www.bankofengland.co.uk/boeapps/database/default.asp
 # IUMABEDR Monthly average of official Bank Rate
@@ -96,26 +98,36 @@ gdp_df <- readxl::read_xlsx("data/ons_uk_quarterly_GDP_real.xlsx", sheet = "2018
 
 # ONS CPI
 # https://www.ons.gov.uk/economy/inflationandpriceindices/datasets/consumerpriceindices
+cpi_df <- readr::read_csv("data/ons_uk_cpi_95_25.csv")
 
 # ONS Unemployment rate (aged 16 and over, seasonally adjusted): %
 # https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms
+unemployment_df <- readr::read_csv("data/ons_uk_unemployment_95_25.csv")
 
 # ONS population
 # https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/timeseries/ukpop/pop
+population_df <- readr::read_csv("data/ons_uk_population_95_25.csv")
+
 
 # trade intensity (% of GDP), World Bank
 # https://data.worldbank.org/indicator/NE.TRD.GNFS.ZS
+trade_intensity_df <- readr::read_csv("data/wb_trade_intensity.csv", skip = 3)%>%
+  filter(`Country Code` == "GBR")
 
 # Research and development expenditure (% of GDP), World Bank
 # https://data.worldbank.org/indicator/GB.XPD.RSDV.GD.ZS
+randd_expenditure_df <- readr::read_csv("data/wb_gerd_annual.csv", skip = 3)%>%
+  filter(`Country Code` == "GBR")
 
 # Manufacturing value added (% of GDP), World Bank
 # https://data.worldbank.org/indicator/NV.IND.MANF.ZS?end=2024&start=1960&view=chart
-
+manuf_val_added_df <- readr::read_csv("data/wb_manuf_val_added.csv", skip = 3)%>%
+  filter(`Country Code` == "GBR")
 
 # Life expectancy, Our World in Data
 # Data source: Riley (2005); Zijdeman et al. (2015); HMD (2025); UN WPP (2024) – Learn more about this data
 # OurWorldinData.org/life-expectancy | CC BY
 # https://ourworldindata.org/life-expectancy
-
+life_expectancy <- readr::read_csv("data/owid_life-expectancy_uk_95_23.csv")
+# need to add 2022: 2.69, and 2023: 2.64 (source: 2023 edition of https://www.ons.gov.uk/economy/governmentpublicsectorandtaxes/researchanddevelopmentexpenditure )
 
