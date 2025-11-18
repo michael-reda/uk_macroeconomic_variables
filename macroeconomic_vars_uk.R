@@ -11,11 +11,30 @@ library(tidyverse)
 # XUMASER Monthly average Spot exchange rates, Sterling into Euro
 boe_exchg_interest_df <- read.csv("data/boe_df.csv")
 
+boe_exchg_interest_df <- boe_exchg_interest_df %>%
+  rename(date = Date,
+         interest_rate = Monthly.average.of.official.Bank.Rate...............a...b..............IUMABEDR,
+         exchg_rate_index = Monthly.average.Effective.exchange.rate.index..Sterling..Jan.2005...100................c...c...c...c...c...c...d...c..............XUMABK67,
+         exchg_gbp_into_usd = Monthly.average.Spot.exchange.rate..Sterling.into.US................d..............XUMAGBD,
+         exchg_gbp_into_eur = Monthly.average.Spot.exchange.rates..Sterling.into.Euro...............d..............XUMASER
+  )
+
+boe_exchg_interest_df$date <- lubridate::dmy(boe_exchg_interest_df$date)
 
 # Institute for Fiscal Studies living standards, poverty and inequality data
 # https://ifs.org.uk/living-standards-poverty-and-inequality-uk
 # net [of taxes and inclusive of benefits] equivalised household income, before housing costs, inflation adjusted.
-ifs_income_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Income (BHC)", range = "a3:f66") #mean weekly: col D; median weekly: col F
+ifs_income_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Income (BHC)", range = "a3:f66")%>%
+  select(2, 4, 6)%>%
+  rename(year = Year,
+         mean_household_income = `Mean income`,
+         median_household_income = `Median income`
+  )
+
+ifs_income_bhc_df$year <- stringr::str_sub(ifs_income_bhc_df$year, 1, 4)
+# https://stackoverflow.com/questions/30255833/convert-four-digit-year-values-to-class-date
+    
+    #mean weekly: col D; median weekly: col F
 ifs_inequality_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Inequality", range = "a3:d66") #gini coefficient: col D
 ifs_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Poverty (BHC)", range = "a3:m66")
 ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Child Poverty (BHC)", range = "a3:m66")
