@@ -25,21 +25,27 @@ boe_exchg_interest_df$date <- lubridate::dmy(boe_exchg_interest_df$date)
 # https://ifs.org.uk/living-standards-poverty-and-inequality-uk
 # net [of taxes and inclusive of benefits] equivalised household income, before housing costs, inflation adjusted.
 ifs_income_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Income (BHC)", range = "a3:f66")%>%
-  select(2, 4, 6)%>%
-  rename(year = Year,
-         mean_household_income = `Mean income`,
-         median_household_income = `Median income`
-  )
-
-ifs_income_bhc_df$year <- stringr::str_sub(ifs_income_bhc_df$year, 1, 4)
-# https://stackoverflow.com/questions/30255833/convert-four-digit-year-values-to-class-date
+  select(2, 4, 6)
     
     #mean weekly: col D; median weekly: col F
-ifs_inequality_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Inequality", range = "a3:d66") #gini coefficient: col D
+ifs_inequality_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Inequality", range = "a3:d66")%>%
+  select(2,4)#gini coefficient: col D
+
 ifs_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Poverty (BHC)", range = "a3:m66")
 ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Child Poverty (BHC)", range = "a3:m66")
 # use col M: absolute poverty: proportion below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.
 
+ifs_df <- dplyr::left_join(
+  
+)
+# for the joined dataframe
+
+stringr::str_sub(ifs_df$year, 1, 4)%>%
+  rename(year = Year,
+         mean_household_income = `Mean income`,
+         median_household_income = `Median income`
+         
+  )
 
 # ONS public sector finance data
 # https://www.ons.gov.uk/economy/governmentpublicsectorandtaxes/publicsectorfinance/bulletins/publicsectorfinances/september2025
