@@ -21,6 +21,10 @@ boe_exchg_interest_df <- boe_exchg_interest_df %>%
 
 boe_exchg_interest_df$date <- lubridate::dmy(boe_exchg_interest_df$date)
 
+str(boe_exchg_interest_df)
+
+boe_exchg_interest_df <- mutate(boe_exchg_interest_df, year = lubridate::year(date))
+
 # Institute for Fiscal Studies living standards, poverty and inequality data
 # https://ifs.org.uk/living-standards-poverty-and-inequality-uk
 # net [of taxes and inclusive of benefits] equivalised household income, before housing costs, inflation adjusted.
@@ -31,20 +35,25 @@ ifs_income_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet
 ifs_inequality_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Inequality", range = "a3:d66")%>%
   select(2,4)#gini coefficient: col D
 
-ifs_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Poverty (BHC)", range = "a3:m66")
-ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Child Poverty (BHC)", range = "a3:m66")
 # use col M: absolute poverty: proportion below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.
-
-ifs_df <- dplyr::left_join(
+ifs_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Poverty (BHC)", range = "a3:m66")%>%
+  select(2, 13)%>%
+  rename(poverty_rate = `60pc...13`)
   
-)
+ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Child Poverty (BHC)", range = "a3:m66")%>%
+  select(2, 13)%>%
+  rename(child_poverty_rate = `60pc...13`)
+
+ifs_df <- dplyr::left_join(ifs_income_bhc_df, ifs_inequality_df, by = "Year")%>%
+  left_join(., ifs_poverty_bhc_df, by = "Year")%>%
+  left_join(., ifs_child_poverty_bhc_df, by = "Year")
+  
 # for the joined dataframe
 
-stringr::str_sub(ifs_df$year, 1, 4)%>%
+ifs_df <- ifs_df %>% mutate(Year = stringr::str_sub(Year, 1, 4))%>%
   rename(year = Year,
          mean_household_income = `Mean income`,
          median_household_income = `Median income`
-         
   )
 
 # ONS public sector finance data
@@ -52,8 +61,13 @@ stringr::str_sub(ifs_df$year, 1, 4)%>%
 # quarterly_public_sector_net_borrowing : J5II
 # quarterly_public_sector_spending : KX5Q
 # quarterly_public_sector_receipts : JW2O
-# public_sector_net_debt : HF6XX
+# public_sector_net_debt £bn: HF6W
+# public_sector_net_debt as % of GDP: HF6X
 public_sector_finances_df <- readxl::read_xlsx("data/ons_public_sector_finances_quarterly.xlsx")
+
+public_sector_finances_subset_df <- public_sector_finances_df[public_sector_finances_df[1, ]%in% c("CDID", "J5II", "KX5Q", "JW2O", "HF6W", "HF6X")]
+
+# rename the columns, subset the rows
 
 
 # ONS gross fixed capital formation
