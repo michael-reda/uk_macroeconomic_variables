@@ -22,8 +22,13 @@ boe_exchg_interest_df <- boe_exchg_interest_df %>%
 boe_exchg_interest_df$date <- lubridate::dmy(boe_exchg_interest_df$date)
 
 str(boe_exchg_interest_df)
+boe_exchg_interest_df$exchg_rate_index <- as.numeric(boe_exchg_interest_df$exchg_rate_index)
 
 boe_exchg_interest_df <- mutate(boe_exchg_interest_df, year = lubridate::year(date))
+
+boe_annual_df <- boe_exchg_interest_df %>%
+  group_by(year)%>%
+  summarise(across(2:5, mean, na.rm = TRUE))
 
 # Institute for Fiscal Studies living standards, poverty and inequality data
 # https://ifs.org.uk/living-standards-poverty-and-inequality-uk
@@ -55,7 +60,7 @@ ifs_df <- ifs_df %>% mutate(Year = stringr::str_sub(Year, 1, 4))%>%
          mean_household_income = `Mean income`,
          median_household_income = `Median income`
   )
-
+  
 # ONS public sector finance data
 # https://www.ons.gov.uk/economy/governmentpublicsectorandtaxes/publicsectorfinance/bulletins/publicsectorfinances/september2025
 # quarterly_public_sector_net_borrowing : J5II
@@ -63,28 +68,63 @@ ifs_df <- ifs_df %>% mutate(Year = stringr::str_sub(Year, 1, 4))%>%
 # quarterly_public_sector_receipts : JW2O
 # public_sector_net_debt £bn: HF6W
 # public_sector_net_debt as % of GDP: HF6X
+# all are nominal.
 public_sector_finances_df <- readxl::read_xlsx("data/ons_public_sector_finances_quarterly.xlsx")
 
-public_sector_finances_subset_df <- public_sector_finances_df[public_sector_finances_df[1, ]%in% c("CDID", "J5II", "KX5Q", "JW2O", "HF6W", "HF6X")]
+public_sector_finances_df <- public_sector_finances_df[public_sector_finances_df[1, ]%in% c("CDID", "J5II", "KX5Q", "JW2O", "HF6W", "HF6X")]
 
-# rename the columns, subset the rows
+names(public_sector_finances_df) <- c("year",
+                                             "pub_sec_net_debt_m", 
+                                             "pub_sec_net_debt_pct_of_gdp",
+                                             "pub_sec_net_borrowing_m",
+                                             "pub_sec_receipts_m",
+                                             "pub_sec_expenditure_m")
 
+
+public_sector_finances_df <- public_sector_finances_df %>%
+  slice(9:87)
+
+public_sector_finances_df[] <- lapply(public_sector_finances_df[], as.numeric)
+
+public_sector_finances_df$pub_sec_net_debt_m <- public_sector_finances_df$pub_sec_net_debt_m * 1000
 
 # ONS gross fixed capital formation
 # https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/grossfixedcapitalformationbysectorandasset
 # sheet = "G1_CVM_SA_Q_levels" array = "a6:m121"
-gfcf_df <- readxl::read_xlsx("data/ons_grossfixedcapitalformationbysectorandasset.xlsx", sheet = "G1_CVM_SA_Q_levels", range = "a6:m121")
-
+gfcf_df <- readxl::read_xlsx("data/ons_grossfixedcapitalformationbysectorandasset.xlsx", sheet = "G1_CVM_SA_Q_levels", range = "a6:m121")%>%
+  select(1, 13)%>%
+  rename(date_qtrly = `Time period column and title row`,
+         gfcf = `Total sector (S.1) Total asset (GFCF)`)%>%
+  slice(2:n())%>%
+  mutate(gfcf = as.numeric(gfcf),
+         date_qtrly = lubridate::yq(date_qtrly),
+         year = lubridate::year(date_qtrly)
+  )%>% group_by(year)%>%
+  summarise(gfcf = sum(gfcf))%>%
+  ungroup()
+  
 
 # ONS UK housebuilding
 # https://www.ons.gov.uk/peoplepopulationandcommunity/housing/datasets/ukhousebuildingpermanentdwellingsstartedandcompleted
  #"1a" "6a:195j"
-housebuilding_df <- readxl::read_xlsx(path = "data/ons_ukhousebuilding.xlsx", sheet = "1a", range = "b6:j195")
+housebuilding_df <- readxl::read_xlsx(path = "data/ons_ukhousebuilding.xlsx", sheet = "1a", range = "b6:j195")%>%
+  select("Period", "Started - All Dwellings", "Completed - All Dwellings")%>%
+  mutate(Period = lubridate::my(Period),
+         year = lubridate::year(Period),
+         `Started - All Dwellings` = as.numeric(`Started - All Dwellings`),
+         `Completed - All Dwellings` = as.numeric(`Completed - All Dwellings`)
+  )%>%
+  group_by(year)%>%
+  summarise(started_dwellings = sum(`Started - All Dwellings`),
+            completed_dwellings = sum(`Completed - All Dwellings`)
+            )%>%
+  ungroup()
 
 
 # ONS Capital Account: Balance: CP NSA
 # https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/timeseries/fkmj/pnbp
-capital_account_balance_df <- readr::read_csv(file = "data/ons_capital_account.csv")
+capital_account_balance_df <- readr::read_csv(file = "data/ons_capital_account.csv")%>%
+  slice(22:86)
 
 
 # ONS trade stats, 1997 - 2025, Chain Volume Measured, EU, non-EU, total, goods, services, imports, exports
@@ -137,15 +177,15 @@ gdp_df <- readxl::read_xlsx("data/ons_uk_quarterly_GDP_real.xlsx", sheet = "2018
 
 # ONS CPI
 # https://www.ons.gov.uk/economy/inflationandpriceindices/datasets/consumerpriceindices
-cpi_df <- readr::read_csv("data/ons_uk_cpi_95_25.csv")
+cpi_df <- readr::read_csv("data/ons_uk_cpi_89_25.csv")
 
 # ONS Unemployment rate (aged 16 and over, seasonally adjusted): %
 # https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms
-unemployment_df <- readr::read_csv("data/ons_uk_unemployment_95_25.csv")
+unemployment_df <- readr::read_csv("data/ons_uk_unemployment_71_24.csv")
 
 # ONS population
 # https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/timeseries/ukpop/pop
-population_df <- readr::read_csv("data/ons_uk_population_95_25.csv")
+population_df <- readr::read_csv("data/ons_uk_population_71_24.csv")
 
 
 # trade intensity (% of GDP), World Bank
@@ -163,10 +203,14 @@ randd_expenditure_df <- readr::read_csv("data/wb_gerd_annual.csv", skip = 3)%>%
 manuf_val_added_df <- readr::read_csv("data/wb_manuf_val_added.csv", skip = 3)%>%
   filter(`Country Code` == "GBR")
 
+# Urban population (% of total population) - United Kingdom
+urban_pop_pct_df <- readr::read_csv("data/wb_urban_pop_pct.csv", skip = 3)%>%
+  filter(`Country Code` == "GBR")
+
 # Life expectancy, Our World in Data
 # Data source: Riley (2005); Zijdeman et al. (2015); HMD (2025); UN WPP (2024) – Learn more about this data
 # OurWorldinData.org/life-expectancy | CC BY
 # https://ourworldindata.org/life-expectancy
-life_expectancy <- readr::read_csv("data/owid_life-expectancy_uk_95_23.csv")
+life_expectancy <- readr::read_csv("data/owid_life_expectancy_uk_61_23.csv")
 # need to add 2022: 2.69, and 2023: 2.64 (source: 2023 edition of https://www.ons.gov.uk/economy/governmentpublicsectorandtaxes/researchanddevelopmentexpenditure )
 
