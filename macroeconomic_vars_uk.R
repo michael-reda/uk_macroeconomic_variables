@@ -124,7 +124,12 @@ housebuilding_df <- readxl::read_xlsx(path = "data/ons_ukhousebuilding.xlsx", sh
 # ONS Capital Account: Balance: CP NSA
 # https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/timeseries/fkmj/pnbp
 capital_account_balance_df <- readr::read_csv(file = "data/ons_capital_account.csv")%>%
-  slice(22:86)
+  slice(22:86)%>%
+  rename(year = Title,
+          capital_account_balance_cp = `Capital Account: Balance: CP NSA`)%>%
+  mutate(year = as.numeric(year),
+         capital_account_balance_cp = as.numeric(capital_account_balance_cp)
+  )
 
 
 # ONS trade stats, 1997 - 2025, Chain Volume Measured, EU, non-EU, total, goods, services, imports, exports
@@ -166,7 +171,7 @@ trade_balance_df <- readxl::read_xlsx("data/ons_uk_trade_stats.xlsx", sheet = "d
            "Trade in Services (TS): WW: Exports: BOP: CVM: SA", 
            "Trade in Services (TS): WW: Imports: BOP: CVM: SA", 
            "Trade in Services (TS): WW: Balance: BOP: CVM: SA"))%>%
-  slice(817:1161)
+  slice(59:86)
 
 
 # ONS quarterly GDP in chained volume measures (2023 prices)
