@@ -145,7 +145,6 @@ capital_account_balance_df <- readr::read_csv(file = "data/ons_capital_account.c
 
 # ONS trade stats, 1997 - 2025, Chain Volume Measured, EU, non-EU, total, goods, services, imports, exports
 # https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/datasets/tradeingoodsmretsallbopeu2013timeseriesspreadsheet
-# row 817 - 1161
 # YW: Total Trade (TT): WW: Exports: BOP: CVM: SA
 # YX: Total Trade (TT): WW: Imports: BOP: CVM: SA
 # YY: Total Trade (TT): WW: Balance: BOP: CVM: SA
@@ -207,7 +206,6 @@ names(trade_balance_df) <- trade_balance_variable_names
 trade_balance_df[] <- lapply(trade_balance_df[], as.numeric)
 
 # ONS quarterly GDP in chained volume measures (2023 prices)
-# sheet= "2018 -" array= "BH165:B286"
 # https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/realtimedatabaseforukgdpabmi
 gdp_df <- readxl::read_xlsx("data/ons_uk_quarterly_GDP_real.xlsx", sheet = "2018 - ", range = "A4:BH286")%>%
   select(1, 60)%>%
@@ -215,8 +213,7 @@ gdp_df <- readxl::read_xlsx("data/ons_uk_quarterly_GDP_real.xlsx", sheet = "2018
   mutate(year = as.numeric(year))%>%
   select(year, gdp = `Sep-25 [2023 prices]\r\nQNA`)%>%
   group_by(year)%>%
-  summarise(gdp = sum(gdp)
-  )%>%
+  summarise(gdp = sum(gdp))%>%
   ungroup()%>%
   filter(year != 2025)
 
@@ -295,6 +292,12 @@ names(wb_df) <- new_names_for_wb_df
 wb_df$randd_exp_pct_of_gdp[wb_df$year == 2022] <- 2.69
 wb_df$randd_exp_pct_of_gdp[wb_df$year == 2023] <- 2.64
 
+rm(trade_intensity_df,
+   randd_expenditure_df,
+   manuf_val_added_df,
+   urban_pop_pct_df
+)
+
 # Life expectancy, Our World in Data
 # Data source: Riley (2005); Zijdeman et al. (2015); HMD (2025); UN WPP (2024) – Learn more about this data
 # OurWorldinData.org/life-expectancy | CC BY
@@ -312,10 +315,24 @@ life_expectancy <- readr::read_csv("data/owid_life_expectancy_uk_61_23.csv")%>%
 # GFCF is CVM (real) so all fine
 # housebuilding: all fine
 # capital account balance: current prices, need to adjust for inflation!
-# 
+# all others are fine
+
 
 # join all the data together
-joined_df <- list(df_x, df_y, df_z) %>% 
-  reduce(full_join, by = "i")
+joined_df <- full_join(boe_annual_df, cpi_df, by = "year")%>%
+             full_join(., gdp_deflator_df, by = "year")%>%
+             full_join(., gdp_df, by = "year")%>%
+             full_join(., unemployment_df, by = "year")%>%
+             full_join(., gfcf_df, by = "year")%>%
+             full_join(., housebuilding_df, by = "year")%>%
+             full_join(., capital_account_balance_df, by = "year")%>%
+             full_join(., wb_df, by = "year")%>%
+             full_join(., trade_balance_df, by = "year")%>%
+             full_join(., public_sector_finances_df, by = "year")%>%
+             full_join(., population_df, by = "year")%>%
+             full_join(., life_expectancy, by = "year")%>%
+             full_join(., ifs_df, by = "year"
+             )  
+            
 
 #begin creating the time series graphs
