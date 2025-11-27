@@ -141,8 +141,6 @@ capital_account_balance_df <- readr::read_csv(file = "data/ons_capital_account.c
          capital_account_balance_cp = as.numeric(capital_account_balance_cp)
   )
 
-# bookmark
-
 # ONS trade stats, 1997 - 2025, Chain Volume Measured, EU, non-EU, total, goods, services, imports, exports
 # https://www.ons.gov.uk/economy/nationalaccounts/balanceofpayments/datasets/tradeingoodsmretsallbopeu2013timeseriesspreadsheet
 # YW: Total Trade (TT): WW: Exports: BOP: CVM: SA
@@ -334,5 +332,16 @@ joined_df <- full_join(boe_annual_df, cpi_df, by = "year")%>%
              full_join(., ifs_df, by = "year"
              )  
             
+# create the GDP deflator index, multiply the public sector finances and capital account balance by this
+joined_df_test <- joined_df
+
+#add a new variable: 1948 'gdp' of 100 grown annually using dplyr::lag() and the GDP deflator growth rate up to the present day.
+# Then rebase to a recent year.
+
+# save as a csv
+readr::write_csv(x = joined_df, file = "data/macroeconomic_variables.csv")
+
+#in future start from here by reading in the .csv file
+macroeconomic_variables_df <- readr::read_csv("data/macroeconomic_variables.csv")
 
 #begin creating the time series graphs
