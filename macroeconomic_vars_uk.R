@@ -1,5 +1,6 @@
 #install.packages("tidyverse")
 library(tidyverse)
+library(afcharts)
 
 ## read in data
 
@@ -332,16 +333,27 @@ joined_df <- full_join(boe_annual_df, cpi_df, by = "year")%>%
              full_join(., ifs_df, by = "year"
              )  
             
-# create the GDP deflator index, multiply the public sector finances and capital account balance by this
-joined_df_test <- joined_df
+
+# reorder by year
+joined_df <- joined_df[order(joined_df$year), ]
 
 #add a new variable: 1948 'gdp' of 100 grown annually using dplyr::lag() and the GDP deflator growth rate up to the present day.
 # Then rebase to a recent year.
+
+# multiply the public sector finances and capital account balance by this
+
 
 # save as a csv
 readr::write_csv(x = joined_df, file = "data/macroeconomic_variables.csv")
 
 #in future start from here by reading in the .csv file
-macroeconomic_variables_df <- readr::read_csv("data/macroeconomic_variables.csv")
+macroeconomic_variables_df <- readr::read_csv("data/macroeconomic_variables.csv")%>%
+    tidyr::pivot_longer(cols = -year, names_to = "variable", values_to = "value")
 
-#begin creating the time series graphs
+macroeconomic_variables_df |>
+  filter(variable %in% c("unemployment_rate", "cpi"))|>
+ggplot(mapping = aes(x = year, y = value, colour = variable))+
+  scale_colour_discrete_af()+
+  geom_line(linewidth = 1)+
+  theme_af()
+
