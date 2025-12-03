@@ -86,7 +86,7 @@ public_sector_finances_df <- public_sector_finances_df[public_sector_finances_df
 names(public_sector_finances_df) <- c("year",
                                              "pub_sec_net_debt_m", 
                                              "pub_sec_net_debt_pct_of_gdp",
-                                             "pub_sec_net_borrowing_m",
+                                             "pub_sec_deficit_m",
                                              "pub_sec_receipts_m",
                                              "pub_sec_expenditure_m")
 
@@ -373,54 +373,36 @@ macroeconomic_variables_df <- macroeconomic_variables_df |>
          )
 
 # create a function for a dynamic plot
-macro_vars_plot_with_recessions <- function(variable_x, 
+macro_vars_plot_function<- function(variable_x, 
                                             recessions = FALSE,
-                                            plot_title = macroeconomic_variables_df$title_i[macroeconomic_variables_df$variable == variable_x],
-                                            plot_subtitle = macroeconomic_variables_df$subtitle_i[macroeconomic_variables_df$variable == variable_x],
-                                            plot_y_label = macroeconomic_variables_df$var_units[macroeconomic_variables_df$variable == variable_x],
-                                            plot_caption = macroeconomic_variables_df$var_source[macroeconomic_variables_df$variable == variable_x]){
+                                            plot_title = paste(unique(macroeconomic_variables_df$title_i[macroeconomic_variables_df$variable == variable_x]), collapse = "; "),
+                                            plot_subtitle = paste(unique(macroeconomic_variables_df$subtitle_i[macroeconomic_variables_df$variable == variable_x]), collapse = "; "),
+                                            plot_y_label = paste(unique(macroeconomic_variables_df$var_units[macroeconomic_variables_df$variable == variable_x]), collapse = "; "),
+                                            plot_caption = paste(unique(macroeconomic_variables_df$var_source[macroeconomic_variables_df$variable == variable_x]), collapse = "; ")
+){
+
+annotate_recession_function <- function(start_year, end_year){
+  annotate("rect", 
+           xmin = start_year, 
+           xmax = end_year, 
+           ymin = 0, 
+           ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
+           fill = "#F46A25",
+           alpha = .2)
+}
+
 macroeconomic_variables_df |>
   filter(variable == variable_x)|>
 ggplot(mapping = aes(x = year, y = value))+
   scale_colour_discrete_af()+
-  geom_line(linewidth = 1)+
-    {if(recessions)annotate("rect", 
-                            xmin = 1975.25, 
-                            xmax = 1975.75, 
-                            ymin = 0, 
-                            ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
-                            fill = "#F46A25",
-                            alpha = .2)}+
-    {if(recessions)annotate("rect", 
-             xmin = 1980, 
-             xmax = 1981.25, 
-             ymin = 0, 
-             ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
-             fill = "#F46A25",
-             alpha = .2)}+
-    {if(recessions)annotate("rect", 
-             xmin = 1990.75, 
-             xmax = 1993.25, 
-             ymin = 0, 
-             ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
-             fill = "#F46A25",
-             alpha = .2)}+
-    {if(recessions)annotate("rect", 
-           xmin = 2008.25, 
-           xmax = 2009.5, 
-           ymin = 0, 
-           ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
-           fill = "#F46A25",
-           alpha = .2)}+
-    {if(recessions)annotate("rect", 
-             xmin = 2020, 
-             xmax = 2020.5, 
-             ymin = 0, 
-             ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
-             fill = "#F46A25",
-             alpha = .2)}+
-    scale_x_continuous(breaks = seq(round(min(macroeconomic_variables_df$year), -1), max(macroeconomic_variables_df$year), by = 5))+
-    scale_y_continuous(limits = c(0, NA), labels = scales::label_comma())+
+  geom_line(linewidth = 1, aes(colour = variable), show.legend = (length(unique(variable_x)) >1))+
+    {if(recessions)annotate_recession_function(1975.25, 1975.75)}+
+    {if(recessions)annotate_recession_function(1980, 1981.25)}+
+    {if(recessions)annotate_recession_function(1990.75, 1993.25)}+
+    {if(recessions)annotate_recession_function(2008.25, 2009.5)}+
+    {if(recessions)annotate_recession_function(2020, 2020.5)}+
+  scale_x_continuous(breaks = seq(round(min(macroeconomic_variables_df$year), -1), max(macroeconomic_variables_df$year), by = 5))+
+  scale_y_continuous(labels = scales::label_comma())+ #limits = c(0, NA),
   labs(
     title = plot_title,
     subtitle = plot_subtitle,
@@ -431,4 +413,7 @@ ggplot(mapping = aes(x = year, y = value))+
   theme_af()
 }
 
-macro_vars_plot_with_recessions("interest_rate", recessions = TRUE)
+macro_vars_plot_function(variable_x = c("gdp_deflator_growth", "cpi", "interest_rate", "unemployment_rate"),  recessions = TRUE)
+
+  
+        
