@@ -52,8 +52,8 @@ ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx"
   select(2, 13)|>
   rename(child_poverty_rate = `60pc...13`)
 
-ifs_df <- dplyr::left_join(ifs_income_bhc_df, ifs_inequality_df, by = "Year")|>
-  left_join(., ifs_poverty_bhc_df, by = "Year")|>
+ifs_df <- dplyr::left_join(ifs_income_bhc_df, ifs_inequality_df, by = "Year")%>%
+  left_join(., ifs_poverty_bhc_df, by = "Year")%>%
   left_join(., ifs_child_poverty_bhc_df, by = "Year")
   
 # for the joined dataframe
@@ -275,8 +275,8 @@ manuf_val_added_df <- readr::read_csv("data/wb_manuf_val_added.csv", skip = 3)|>
 urban_pop_pct_df <- readr::read_csv("data/wb_urban_pop_pct.csv", skip = 3)|>
   filter(`Country Code` == "GBR")
 
-wb_df <- rbind(trade_intensity_df, randd_expenditure_df, manuf_val_added_df, urban_pop_pct_df)|>
-  select(c(3, 5:(ncol(.) - 1)))|>
+wb_df <- rbind(trade_intensity_df, randd_expenditure_df, manuf_val_added_df, urban_pop_pct_df)%>%
+  select(c(3, 5:(ncol(.) - 1)))%>%
   pivot_longer(cols = 2:ncol(.), names_to = "year", values_to = "value")
 
 wb_df$year <- as.numeric(wb_df$year)
@@ -316,32 +316,34 @@ life_expectancy <- readr::read_csv("data/owid_life_expectancy_uk_61_23.csv")|>
 # capital account balance: current prices, need to adjust for inflation!
 # all others are fine
 
+# create the GDP deflator index, rebase to 2023 and multiply public sector finances and capital account balance by this.
+
 
 # join all the data together
-joined_df <- full_join(boe_annual_df, cpi_df, by = "year")|>
-             full_join(., gdp_deflator_df, by = "year")|>
-             full_join(., gdp_df, by = "year")|>
-             full_join(., unemployment_df, by = "year")|>
-             full_join(., gfcf_df, by = "year")|>
-             full_join(., housebuilding_df, by = "year")|>
-             full_join(., capital_account_balance_df, by = "year")|>
-             full_join(., wb_df, by = "year")|>
-             full_join(., trade_balance_df, by = "year")|>
-             full_join(., public_sector_finances_df, by = "year")|>
-             full_join(., population_df, by = "year")|>
-             full_join(., life_expectancy, by = "year")|>
+joined_df <- full_join(boe_annual_df, cpi_df, by = "year")%>%
+             full_join(., gdp_deflator_df, by = "year")%>%
+             full_join(., gdp_df, by = "year")%>%
+             full_join(., unemployment_df, by = "year")%>%
+             full_join(., gfcf_df, by = "year")%>%
+             full_join(., housebuilding_df, by = "year")%>%
+             full_join(., capital_account_balance_df, by = "year")%>%
+             full_join(., wb_df, by = "year")%>%
+             full_join(., trade_balance_df, by = "year")%>%
+             full_join(., public_sector_finances_df, by = "year")%>%
+             full_join(., population_df, by = "year")%>%
+             full_join(., life_expectancy, by = "year")%>%
              full_join(., ifs_df, by = "year"
-             )  
+             )
             
 
-# reorder by year
-joined_df <- joined_df[order(joined_df$year), ]
+# reorder by year and remove 2025
+joined_df <- joined_df[order(joined_df$year), ]|>
+  filter(year != 2025)
 
 #add a new variable: 1948 'gdp' of 100 grown annually using dplyr::lag() and the GDP deflator growth rate up to the present day.
 # Then rebase to a recent year.
 
 # multiply the public sector finances and capital account balance by this
-
 
 # save as a csv
 readr::write_csv(x = joined_df, file = "data/macroeconomic_variables.csv")
@@ -351,7 +353,7 @@ macroeconomic_variables_df <- readr::read_csv("data/macroeconomic_variables.csv"
     tidyr::pivot_longer(cols = -year, names_to = "variable", values_to = "value")|>
   filter(!is.na(value))
 
-# add columns for the labels that will be in the plots.
+# add columns for the labels and data sources that will be in the plots
 macroeconomic_variables_df <- macroeconomic_variables_df |>
     mutate(title_i = case_when(variable == "interest_rate" ~ "Interest rate",
                                variable == "cpi" ~ "CPI",
@@ -359,51 +361,74 @@ macroeconomic_variables_df <- macroeconomic_variables_df |>
          subtitle_i = case_when(variable == "interest_rate" ~ "yearly average of official Bank rate",
                                 variable == "cpi" ~ "annual growth rate of the consumer price index",
                                 .default = NA),
-         y_label_i = case_when(variable == "interest_rate" ~ "%",
+         var_units = case_when(variable == "interest_rate" ~ "%",
                                variable ==  "cpi" ~ "%",
                                .default = NA),
-         caption_i = case_when(variable == "interest_rate" ~ "Bank of England, https://www.bankofengland.co.uk/boeapps/database/default.asp",
-                               variable == "cpi" ~ "ONS, link",
-                               .default = NA)
+         var_source = case_when(variable == "interest_rate" ~ "Bank of England",
+                               variable == "cpi" ~ "ONS",
+                               .default = NA),
+         var_url = case_when(variable == "interest_rate" ~ "url",
+                             variable == "cpi" ~ "url",
+                             .default = NA)
          )
 
-
-macro_vars_plot <- function(variable_x){
+# create a function for a dynamic plot
+macro_vars_plot_with_recessions <- function(variable_x, 
+                                            recessions = FALSE,
+                                            plot_title = macroeconomic_variables_df$title_i[macroeconomic_variables_df$variable == variable_x],
+                                            plot_subtitle = macroeconomic_variables_df$subtitle_i[macroeconomic_variables_df$variable == variable_x],
+                                            plot_y_label = macroeconomic_variables_df$var_units[macroeconomic_variables_df$variable == variable_x],
+                                            plot_caption = macroeconomic_variables_df$var_source[macroeconomic_variables_df$variable == variable_x]){
 macroeconomic_variables_df |>
   filter(variable == variable_x)|>
 ggplot(mapping = aes(x = year, y = value))+
   scale_colour_discrete_af()+
   geom_line(linewidth = 1)+
-    annotate("rect", 
+    {if(recessions)annotate("rect", 
+                            xmin = 1975.25, 
+                            xmax = 1975.75, 
+                            ymin = 0, 
+                            ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
+                            fill = "#F46A25",
+                            alpha = .2)}+
+    {if(recessions)annotate("rect", 
              xmin = 1980, 
-             xmax = 1981, 
+             xmax = 1981.25, 
              ymin = 0, 
              ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
              fill = "#F46A25",
-             alpha = .2)+
-  annotate("rect", 
-           xmin = 2008, 
-           xmax = 2009, 
+             alpha = .2)}+
+    {if(recessions)annotate("rect", 
+             xmin = 1990.75, 
+             xmax = 1993.25, 
+             ymin = 0, 
+             ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
+             fill = "#F46A25",
+             alpha = .2)}+
+    {if(recessions)annotate("rect", 
+           xmin = 2008.25, 
+           xmax = 2009.5, 
            ymin = 0, 
            ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
            fill = "#F46A25",
-           alpha = .2)+
-    annotate("rect", 
+           alpha = .2)}+
+    {if(recessions)annotate("rect", 
              xmin = 2020, 
-             xmax = 2022, 
+             xmax = 2020.5, 
              ymin = 0, 
              ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
              fill = "#F46A25",
-             alpha = .2)+
-    scale_y_continuous(limits = c(0, NA))+
+             alpha = .2)}+
+    scale_x_continuous(breaks = seq(round(min(macroeconomic_variables_df$year), -1), max(macroeconomic_variables_df$year), by = 5))+
+    scale_y_continuous(limits = c(0, NA), labels = scales::label_comma())+
   labs(
-    title = macroeconomic_variables_df$title_i[macroeconomic_variables_df$variable == variable_x],
-    subtitle = macroeconomic_variables_df$subtitle_i[macroeconomic_variables_df$variable == variable_x],
+    title = plot_title,
+    subtitle = plot_subtitle,
     x = "year",
-    y = macroeconomic_variables_df$y_label_i[macroeconomic_variables_df$variable == variable_x],
-    caption = macroeconomic_variables_df$caption_i[macroeconomic_variables_df$variable == variable_x]
+    y = plot_y_label,
+    caption = stringr::str_c("Source: ", plot_caption, if_else(recessions, ". Shaded areas indicate economic recessions.", ""), sep = "")
   )+  
   theme_af()
 }
 
-macro_vars_plot("interest_rate")
+macro_vars_plot_with_recessions("interest_rate", recessions = TRUE)
