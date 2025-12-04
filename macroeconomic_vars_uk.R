@@ -305,20 +305,6 @@ life_expectancy <- readr::read_csv("data/owid_life_expectancy_uk_61_23.csv")|>
   select(year = Year,
          life_expectancy = `Period life expectancy at birth`)
 
-
-
-# make a note of which variables are nominal, which need summarising by averaging or summing up to annual, which need dividing or multiplying by an index
-# Boe: all indices or rates so all fine
-# IFS: already inflation adjusted
-# ONS public sector finances: all are nominal!
-# GFCF is CVM (real) so all fine
-# housebuilding: all fine
-# capital account balance: current prices, need to adjust for inflation!
-# all others are fine
-
-# create the GDP deflator index, rebase to 2023 and multiply public sector finances and capital account balance by this.
-
-
 # join all the data together
 joined_df <- full_join(boe_annual_df, cpi_df, by = "year")%>%
              full_join(., gdp_deflator_df, by = "year")%>%
@@ -336,14 +322,45 @@ joined_df <- full_join(boe_annual_df, cpi_df, by = "year")%>%
              )
             
 
-# reorder by year and remove 2025
+# reorder by year and remove 2025 and pre- 1948
 joined_df <- joined_df[order(joined_df$year), ]|>
-  filter(year != 2025)
+  filter(year != 2025 & year >= 1949)
 
-#add a new variable: 1948 'gdp' of 100 grown annually using dplyr::lag() and the GDP deflator growth rate up to the present day.
-# Then rebase to a recent year.
+# make a note of which variables are nominal, which need summarising by averaging or summing up to annual, which need dividing or multiplying by an index
+# Boe: all indices or rates so all fine
+# IFS: already inflation adjusted
+# ONS public sector finances: all are nominal!
+# GFCF is CVM (real) so all fine
+# housebuilding: all fine
+# capital account balance: current prices, need to adjust for inflation!
+# all others are fine
 
-# multiply the public sector finances and capital account balance by this
+# create the GDP deflator index. 1948 = 100
+joined_df <- joined_df |>
+    mutate(gdp_deflator_index_48 = cumprod(1 + (gdp_deflator_growth /  100)))
+
+# rebase to 2023. Treasury guidance: "divide all the deflators by the value of the deflator in the new reference year, then multiply by 100."
+index_value_in_2023 <- joined_df |>
+  filter(year == 2023)|>
+  select(gdp_deflator_index_48)|>
+  pull()
+  
+joined_df <- joined_df |>
+    mutate(gdp_deflator_index = gdp_deflator_index_48 / index_value_in_2023)
+
+joined_df <- select(joined_df, -gdp_deflator_index_48)
+
+# multiply the public sector finances and capital account balance by this.
+# before: pub_sec_expenditure_m is 4655 in 1949.
+joined_df <- joined_df %>%
+  mutate(across(.cols = c(capital_account_balance_cp,
+                          pub_sec_net_debt_m,
+                          pub_sec_deficit_m,
+                          pub_sec_receipts_m,
+                          pub_sec_expenditure_m),
+                ~ (.x / gdp_deflator_index) * 100
+  ))%>%
+  rename(capital_account_balance = capital_account_balance_cp)
 
 # save as a csv
 readr::write_csv(x = joined_df, file = "data/macroeconomic_variables.csv")
