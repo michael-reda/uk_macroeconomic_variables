@@ -320,7 +320,6 @@ joined_df <- full_join(boe_annual_df, cpi_df, by = "year")%>%
              full_join(., life_expectancy, by = "year")%>%
              full_join(., ifs_df, by = "year"
              )
-            
 
 # reorder by year and remove 2025 and pre- 1948
 joined_df <- joined_df[order(joined_df$year), ]|>
@@ -350,8 +349,8 @@ joined_df <- joined_df |>
 
 joined_df <- select(joined_df, -gdp_deflator_index_48)
 
-# multiply the public sector finances and capital account balance by this.
-# before: pub_sec_expenditure_m is 4655 in 1949.
+# multiply the public sector finances and capital account balance by this
+# apart from the 'as_pct_of_gdp' variable!
 joined_df <- joined_df %>%
   mutate(across(.cols = c(capital_account_balance_cp,
                           pub_sec_net_debt_m,
@@ -361,6 +360,9 @@ joined_df <- joined_df %>%
                 ~ (.x / gdp_deflator_index) * 100
   ))%>%
   rename(capital_account_balance = capital_account_balance_cp)
+
+# I've now checked that all the datasets include the whole of 2024. There are none which are
+# cut off mid-year leading to partial totals.
 
 # save as a csv
 readr::write_csv(x = joined_df, file = "data/macroeconomic_variables.csv")
