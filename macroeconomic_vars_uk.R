@@ -372,24 +372,26 @@ macroeconomic_variables_df <- readr::read_csv("data/macroeconomic_variables.csv"
     tidyr::pivot_longer(cols = -year, names_to = "variable", values_to = "value")|>
   filter(!is.na(value))
 
-# add columns for the labels and data sources that will be in the plots
-macroeconomic_variables_df <- macroeconomic_variables_df |>
-    mutate(title_i = case_when(variable == "interest_rate" ~ "Interest rate",
-                               variable == "cpi" ~ "CPI",
-                                            .default = NA),
-         subtitle_i = case_when(variable == "interest_rate" ~ "yearly average of official Bank rate",
-                                variable == "cpi" ~ "annual growth rate of the consumer price index",
-                                .default = NA),
-         var_units = case_when(variable == "interest_rate" ~ "%",
-                               variable ==  "cpi" ~ "%",
-                               .default = NA),
-         var_source = case_when(variable == "interest_rate" ~ "Bank of England",
-                               variable == "cpi" ~ "ONS",
-                               .default = NA),
-         var_url = case_when(variable == "interest_rate" ~ "url",
-                             variable == "cpi" ~ "url",
-                             .default = NA)
-         )
+# replace this with the completed operation in the variable_titles_units_script.
+# # add columns for the labels and data sources that will be in the plots
+# macroeconomic_variables_df <- macroeconomic_variables_df |>
+#     mutate(title_i = case_when(variable == "interest_rate" ~ "Interest rate",
+#                                variable == "cpi" ~ "CPI",
+#                                variable == "" ~ "",
+#                                             .default = NA),
+#          subtitle_i = case_when(variable == "interest_rate" ~ "yearly average of official Bank rate",
+#                                 variable == "cpi" ~ "annual growth rate of the consumer price index",
+#                                 .default = NA),
+#          var_units = case_when(variable == "interest_rate" ~ "%",
+#                                variable ==  "cpi" ~ "%",
+#                                .default = NA),
+#          var_source = case_when(variable == "interest_rate" ~ "Bank of England",
+#                                variable == "cpi" ~ "ONS",
+#                                .default = NA),
+#          var_url = case_when(variable == "interest_rate" ~ "url",
+#                              variable == "cpi" ~ "url",
+#                              .default = NA)
+#          )
 
 # create a function for a dynamic plot
 macro_vars_plot_function<- function(variable_x, 
