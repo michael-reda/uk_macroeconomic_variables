@@ -36,12 +36,13 @@ rm(boe_exchg_interest_df)
 # Institute for Fiscal Studies living standards, poverty and inequality data
 # https://ifs.org.uk/living-standards-poverty-and-inequality-uk
 # net [of taxes and inclusive of benefits] equivalised household income, before housing costs, inflation adjusted.
+# mean weekly: col D; median weekly: col F
 ifs_income_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Income (BHC)", range = "a3:f66")|>
   select(2, 4, 6)
     
-    #mean weekly: col D; median weekly: col F
+# gini coefficient: col D. 0 = perfect equality; 1 = perfect inequality
 ifs_inequality_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Inequality", range = "a3:d66")|>
-  select(2,4)#gini coefficient: col D
+  select(2,4)
 
 # use col M: absolute poverty: proportion below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.
 ifs_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Poverty (BHC)", range = "a3:m66")|>
@@ -404,7 +405,7 @@ variables_list_df <- macroeconomic_variables_df$variable |> unique() |> as_tibbl
 macro_vars_plot_function<- function(variable_x, 
                                             recessions = FALSE,
                                             plot_title = paste(unique(macroeconomic_variables_df$title_i[macroeconomic_variables_df$variable == variable_x]), collapse = "; "),
-                                            plot_subtitle = paste(unique(macroeconomic_variables_df$subtitle_i[macroeconomic_variables_df$variable == variable_x]), collapse = "; "),
+                                            plot_subtitle,
                                             plot_y_label = paste(unique(macroeconomic_variables_df$var_units[macroeconomic_variables_df$variable == variable_x]), collapse = "; "),
                                             plot_caption = paste(unique(macroeconomic_variables_df$var_source[macroeconomic_variables_df$variable == variable_x]), collapse = "; ")
 ){
