@@ -210,9 +210,9 @@ gdp_df <- readxl::read_xlsx("data/ons_uk_quarterly_GDP_real.xlsx", sheet = "2018
   select(1, 60)|>
   mutate(year = substr(`Publication date and time period`, 4, 7))|>
   mutate(year = as.numeric(year))|>
-  select(year, gdp = `Sep-25 [2023 prices]\r\nQNA`)|>
+  select(year, gdp_m = `Sep-25 [2023 prices]\r\nQNA`)|>
   group_by(year)|>
-  summarise(gdp = sum(gdp))|>
+  summarise(gdp_m = sum(gdp_m))|>
   ungroup()|>
   filter(year != 2025)
 
@@ -364,6 +364,11 @@ joined_df <- joined_df %>%
 # I've now checked that all the datasets include the whole of 2024. There are none which are
 # cut off mid-year leading to partial totals.
 
+# create GDP growth rate and GDP per capita
+joined_df <- joined_df %>% mutate(gdp_per_capita = gdp_m *1000000 / population,
+                                 gdp_growth_rate = (gdp_m - dplyr::lag(gdp_m))/ dplyr::lag(gdp_m)
+                                 )
+
 # save as a csv
 readr::write_csv(x = joined_df, file = "data/macroeconomic_variables.csv")
 
@@ -371,6 +376,8 @@ readr::write_csv(x = joined_df, file = "data/macroeconomic_variables.csv")
 macroeconomic_variables_df <- readr::read_csv("data/macroeconomic_variables.csv")|>
     tidyr::pivot_longer(cols = -year, names_to = "variable", values_to = "value")|>
   filter(!is.na(value))
+
+variables_list_df <- macroeconomic_variables_df$variable |> unique() |> as_tibble()
 
 # replace this with the completed operation in the variable_titles_units_script.
 # # add columns for the labels and data sources that will be in the plots
@@ -407,13 +414,13 @@ annotate_recession_function <- function(start_year, end_year){
            xmin = start_year, 
            xmax = end_year, 
            ymin = 0, 
-           ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable == variable_x]),
+           ymax = max(macroeconomic_variables_df$value[macroeconomic_variables_df$variable %in% variable_x]),
            fill = "#F46A25",
            alpha = .2)
 }
 
 macroeconomic_variables_df |>
-  filter(variable == variable_x)|>
+  filter(variable %in% variable_x)|>
 ggplot(mapping = aes(x = year, y = value))+
   scale_colour_discrete_af()+
   geom_line(linewidth = 1, aes(colour = variable), show.legend = (length(unique(variable_x)) >1))+
@@ -423,7 +430,7 @@ ggplot(mapping = aes(x = year, y = value))+
     {if(recessions)annotate_recession_function(2008.25, 2009.5)}+
     {if(recessions)annotate_recession_function(2020, 2020.5)}+
   scale_x_continuous(breaks = seq(round(min(macroeconomic_variables_df$year), -1), max(macroeconomic_variables_df$year), by = 5))+
-  scale_y_continuous(labels = scales::label_comma())+ #limits = c(0, NA),
+  scale_y_continuous(labels = scales::label_comma())+
   labs(
     title = plot_title,
     subtitle = plot_subtitle,
@@ -434,7 +441,6 @@ ggplot(mapping = aes(x = year, y = value))+
   theme_af()
 }
 
-macro_vars_plot_function(variable_x = c("gdp_deflator_growth", "cpi", "interest_rate", "unemployment_rate"),  recessions = TRUE)
+macro_vars_plot_function(variable_x = c("unemployment_rate", "interest_rate", "cpi"),  recessions = TRUE)
 
-  
-        
+                                                         
