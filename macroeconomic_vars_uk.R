@@ -1,4 +1,3 @@
-#install.packages("tidyverse")
 library(tidyverse)
 library(afcharts)
 
@@ -49,18 +48,25 @@ ifs_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", shee
   select(2, 13)|>
   rename(ab_poverty_rate = `60pc...13`)
 
-# use col H: relative poverty: proportion below 60% of the fraction of contemporary median. This is the official absolute poverty rate.
+# use col H: relative poverty: proportion below 60% of the fraction of contemporary median.
 ifs_rel_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Poverty (BHC)", range = "a3:h66")|>
   select(2, 8)|>
   rename(rel_poverty_rate = `60pc`)
   
 ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Child Poverty (BHC)", range = "a3:m66")|>
   select(2, 13)|>
-  rename(child_poverty_rate = `60pc...13`)
+  rename(ab_child_poverty_rate = `60pc...13`)
+
+# use col H: relative child poverty: proportion below 60% of the fraction of contemporary median.
+ifs_rel_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Child Poverty (BHC)", range = "a3:h66")|>
+  select(2, 8)|>
+  rename(rel_child_poverty_rate = `60pc`)
 
 ifs_df <- dplyr::left_join(ifs_income_bhc_df, ifs_inequality_df, by = "Year")%>%
   left_join(., ifs_poverty_bhc_df, by = "Year")%>%
-  left_join(., ifs_child_poverty_bhc_df, by = "Year")
+  left_join(., ifs_rel_poverty_bhc_df, by = "Year")%>%
+  left_join(., ifs_child_poverty_bhc_df, by = "Year")%>%
+  left_join(., ifs_rel_child_poverty_bhc_df, by = "Year")
   
 # for the joined dataframe
 
@@ -377,6 +383,10 @@ joined_df <- joined_df %>% mutate(gdp_per_capita = gdp_m *1000000 / population,
 
 # save as a csv
 readr::write_csv(x = joined_df, file = "data/macroeconomic_variables.csv")
+
+
+###########################################################################################
+
 
 #in future start from here by reading in the .csv file
 macroeconomic_variables_df <- readr::read_csv("data/macroeconomic_variables.csv")|>
