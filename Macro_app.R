@@ -1,10 +1,32 @@
 library(tidyverse)
 library(afcharts)
 library(shiny)
-
+library(plotly)
 ###################   Data  ###################
 
+macroeconomic_variables_df <- read_csv("data/macroeconomic_variables.csv")%>%
+  pivot_longer(cols = -year, names_to = "variable", values_to = "value")%>%
+  filter(!is.na(value))
 
+source("variable_titles_units_script.R")
+print(names(macroeconomic_variables_df))  # add this temporarily
+
+
+
+variable_choices <- macroeconomic_variables_df %>%
+  select(variable, title_i) %>%
+  distinct() %>%
+  drop_na(title_i) %>%
+  arrange(title_i) %>%
+  deframe()
+
+enriched_df <- macroeconomic_variables_df
+
+#variables_list_df <- macroeconomic_variables_df$variable %>%
+#  unique() %>% 
+ # as_tibble()
+
+#variables_list <- unique(macroeconomic_variables_df$variable)
 
 
 
@@ -19,9 +41,9 @@ ui <- fluidPage(
         background: white;
       }
       
-      .chart-container {
+      .page-container {
         text-align: center;
-        border: 3px solid #ae08c4;
+        border: 4px solid #b50d3f;
         padding: 40px;
         background-color: #ffffff;
         width: 90%;
@@ -30,7 +52,7 @@ ui <- fluidPage(
         box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       }
       
-      .chart-title {
+      .page-title {
         font-size: 2em;
         color: #666666;
         margin-bottom: 20px;
@@ -92,35 +114,51 @@ ui <- fluidPage(
   ),
   
   tabsetPanel(
-    tabPanel("UK impact of JOB/AG/255",
+    tabPanel("UK Macroeconomics",
              div(style = "padding: 40px;",
-                 h1("WTO analysis: JOB/AG/255", class = "title-main"),
+                 h1("UK Macroeconomics", class = "title-main"),
                  
                  div(class = "title-section",
-                     h3("Tariff simplification", class = "title-subhead"),
-                     p("This refers to converting complex and compound (non-ad valorem) tariffs into ad valorem tariffs", class = "title-text")
+                     h3("Institue of fiscal Studies", class = "title-subhead"),
+                     p("Poverty data", class = "title-text")
                  ),
                  
                  div(class = "title-section",
-                     h3("Tariff peaks", class = "title-subhead"),
-                     p("For industrialised countries like the UK, the WTO defines tariff peaks as above 15% across the entire tariff universe.", class = "title-text")
+                     h3("ONS", class = "title-subhead"),
+                     p("Office for National statistics", class = "title-text")
                  ),
                  
-                 div(class = "title-section",
-                     h3("Tariff escalation", class = "title-subhead"),
-                     p("This refers to tackling what some members perceive as the “unfair” structure of tariff regimes, in which tariffs are either zero or low on primary products and increase, or escalate, as products undergo processing.", class = "title-text")
-                 ),
                  # Footer section
                  div(class = "footer-section",
                      h4("Data sources & caveats", class = "footer-heading"),
                      div(class = "footer-content",
-                         p(strong("Data sources:"), "All the data presented is taken from the 2025 XWH AVE estimates using HMRC data from 2023 and 2024."),
-                         p(strong("Caveats:"), "All calculations and analysis excludes all preferential trade agreements."),
-                         p(em("Created by Aadam Akbar 01/09/2025 | For any further questions please get in contact."))
+                         p(strong("Data sources:"), "All the data presented is taken from the Bank of England, ONS and Institue for fiscal studies"),
+                         p(strong("Caveats:"), "Think of something"),
+                         p(em("Created by Michael Reda and Aadam Akbar 10/03/2026 | For any further questions please get in contact."))
                      )
                  )
              )
-    ) # close tab panel
+    ), # close tab panel
+    tabPanel("UK graphs",
+             fluidRow(
+               div(class = "page-container",
+               h2(class = "page-title", "UK Macroeconomic Graphs"),
+               p(class = "barchart-description", 
+                 "This tab allows you to select any key UK macroeconometic indicator from the dropdown and see how trends have changed over time."),
+               
+                 selectInput(
+                   inputId = "Variable",
+                   label = "Choose a variable:",
+                   choices = variable_choices
+                 ),
+               
+                 h3("Graphs pending"),
+                 
+                 plotlyOutput("chart", width = "100%", height = "600px")
+                 
+               )# close chart container
+              ) # close fluid
+             ) # close tabPanel
   ) # close tabset panel 
   
 ) #close UI
@@ -128,5 +166,31 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
+  Data <- reactive({
+    req(input$Variable)
+    
+    filtered_data <- macroeconomic_variables_df %>%
+      filter(variable == input$Variable)
+  })
+
+  output$chart <- renderPlotly({
+    d <- Data()  # define d from the reactive
+    
+    p <- ggplot(d,
+                aes(x = year, y = value)) +
+      geom_line(color = "#F46A25", linewidth = 1.3) +
+      theme_minimal() +
+      labs(
+        y = d$var_units[1],
+        x = "Year",
+        title = d$title_i[1]
+      )
+    
+    ggplotly(p)
+  })
+  
+  
   
 } # close server
+
+shinyApp(ui = ui, server = server)

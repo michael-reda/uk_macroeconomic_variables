@@ -47,7 +47,12 @@ ifs_inequality_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet
 # use col M: absolute poverty: proportion below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.
 ifs_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Poverty (BHC)", range = "a3:m66")|>
   select(2, 13)|>
-  rename(poverty_rate = `60pc...13`)
+  rename(ab_poverty_rate = `60pc...13`)
+
+# use col H: relative poverty: proportion below 60% of the fraction of contemporary median. This is the official absolute poverty rate.
+ifs_rel_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Poverty (BHC)", range = "a3:h66")|>
+  select(2, 8)|>
+  rename(rel_poverty_rate = `60pc`)
   
 ifs_child_poverty_bhc_df <- readxl::read_xlsx("data/ifs_poverty_inequality.xlsx", sheet = "Child Poverty (BHC)", range = "a3:m66")|>
   select(2, 13)|>
