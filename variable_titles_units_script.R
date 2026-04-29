@@ -1,5 +1,5 @@
 # add columns for the labels and data sources that will be in the plots
-macroeconomic_variables_df <- macroeconomic_variables_df |>
+macroeconomic_variables_df <<- macroeconomic_variables_df |>
   mutate(title_i = case_when(variable == "interest_rate" ~ "Interest Rate",
                              variable == "cpi" ~ "CPI growth rate",
                              variable == "gdp_deflator_growth" ~ "GDP Deflator Growth Rate",
@@ -243,4 +243,9 @@ macroeconomic_variables_df <- macroeconomic_variables_df |>
                              variable == "services_imports_total" ~ "",
                              variable == "services_balance_total" ~ "",
                              .default = NA)
+
   )
+
+
+
+variable_choices <- sort(unique(macroeconomic_variables_df$title_i[!is.na(macroeconomic_variables_df$title_i)]))

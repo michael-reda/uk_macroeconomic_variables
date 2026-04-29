@@ -391,7 +391,8 @@ readr::write_csv(x = joined_df, file = "data/macroeconomic_variables.csv")
 #in future start from here by reading in the .csv file
 macroeconomic_variables_df <- readr::read_csv("data/macroeconomic_variables.csv")|>
     tidyr::pivot_longer(cols = -year, names_to = "variable", values_to = "value")|>
-  filter(!is.na(value))
+  filter(!is.na(value)) %>%
+  rename(Title = `title_i`)
 
 variables_list_df <- macroeconomic_variables_df$variable |> unique() |> as_tibble()
 

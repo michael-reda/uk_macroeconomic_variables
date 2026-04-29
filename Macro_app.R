@@ -4,31 +4,11 @@ library(shiny)
 library(plotly)
 ###################   Data  ###################
 
-macroeconomic_variables_df <- read_csv("data/macroeconomic_variables.csv")%>%
-  pivot_longer(cols = -year, names_to = "variable", values_to = "value")%>%
+macroeconomic_variables_df <- read_csv("data/macroeconomic_variables.csv") %>%
+  pivot_longer(cols = -year, names_to = "variable", values_to = "value") %>%
   filter(!is.na(value))
 
-source("variable_titles_units_script.R")
-print(names(macroeconomic_variables_df))  # add this temporarily
-
-
-
-variable_choices <- macroeconomic_variables_df %>%
-  select(variable, title_i) %>%
-  distinct() %>%
-  drop_na(title_i) %>%
-  arrange(title_i) %>%
-  deframe()
-
-enriched_df <- macroeconomic_variables_df
-
-#variables_list_df <- macroeconomic_variables_df$variable %>%
-#  unique() %>% 
- # as_tibble()
-
-#variables_list <- unique(macroeconomic_variables_df$variable)
-
-
+variable_choices <- sort(unique(macroeconomic_variables_df$variable))
 
 ###################  APP ######################
 
@@ -152,7 +132,7 @@ ui <- fluidPage(
                    choices = variable_choices
                  ),
                
-                 h3("Graphs pending"),
+                 h3("Graphs:"),
                  
                  plotlyOutput("chart", width = "100%", height = "600px")
                  
@@ -163,34 +143,25 @@ ui <- fluidPage(
   
 ) #close UI
 
-
 server <- function(input, output, session) {
   
-  Data <- reactive({
+  output$chart <- renderPlotly({
+    
     req(input$Variable)
     
-    filtered_data <- macroeconomic_variables_df %>%
-      filter(variable == input$Variable)
-  })
-
-  output$chart <- renderPlotly({
-    d <- Data()  # define d from the reactive
+    d <- macroeconomic_variables_df[
+      macroeconomic_variables_df$variable == input$Variable, 
+    ]
     
-    p <- ggplot(d,
-                aes(x = year, y = value)) +
-      geom_line(color = "#F46A25", linewidth = 1.3) +
-      theme_minimal() +
-      labs(
-        y = d$var_units[1],
-        x = "Year",
-        title = d$title_i[1]
-      )
+    req(nrow(d) > 0)
     
-    ggplotly(p)
+    ggplotly(
+      ggplot(d, aes(year, value)) +
+        geom_line(color = "#F46A25")
+    )
+    
   })
   
-  
-  
-} # close server
+}
 
 shinyApp(ui = ui, server = server)
