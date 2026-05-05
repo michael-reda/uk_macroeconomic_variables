@@ -48,7 +48,7 @@ ui <- fluidPage(
       /* Title page styles */
       .title-main {
         text-align: center;
-        color: #089e21;
+        color: #b50d3f;
         font-size: 2.2em;
         margin: 30px 0;
         font-weight: bold;
@@ -57,7 +57,7 @@ ui <- fluidPage(
       .title-section {
         margin: 30px 0;
         padding: 15px;
-        border-left: 4px solid #089e21;
+        border-left: 4px solid #b50d3f;
       }
       
       .title-subhead {
@@ -76,7 +76,7 @@ ui <- fluidPage(
       .footer-section {
         margin-top: 50px;
         padding-top: 30px;
-        border-top: 3px solid #089e21;
+        border-top: 3px solid #b50d3f;
       }
       
       .footer-content {
@@ -86,7 +86,7 @@ ui <- fluidPage(
       }
       
       .footer-heading {
-        color: #089e21;
+        color: #b50d3f;
         font-weight: 600;
         margin-bottom: 15px;
       }
@@ -138,7 +138,10 @@ ui <- fluidPage(
                  
                )# close chart container
               ) # close fluid
-             ) # close tabPanel
+             ), # close tabPanel
+    tabPanel( "Correlation Matrix"
+      
+    )# close tabPanel
   ) # close tabset panel 
   
 ) #close UI
@@ -155,10 +158,44 @@ server <- function(input, output, session) {
     
     req(nrow(d) > 0)
     
-    ggplotly(
-      ggplot(d, aes(year, value)) +
-        geom_line(color = "#F46A25")
-    )
+    p <- ggplot(d, aes(year, value)) +
+      geom_line(color = "#F46A25") +
+      
+      geom_vline(xintercept = 2020, linetype = "dashed", color = "#E6A8A1") +
+      geom_vline(xintercept = 2021, linetype = "dashed", color = "#A9C1D9") +
+      geom_vline(xintercept = 2016, linetype = "dashed", color = "#A4C6D2") +
+      geom_vline(xintercept = 1979, linetype = "dashed", color = "#C8B6D9") +
+      geom_vline(xintercept = 1990, linetype = "dashed", color = "#C8B6D9") +
+      geom_vline(xintercept = 1973, linetype = "dashed", color = "#BFD8C0")
+    
+    ggplotly(p) %>%
+      layout(
+        annotations = list(
+          list(x = 2020, y = 0.95, xref = "x", yref = "paper",
+               text = "COVID-19", textangle = -45, showarrow = FALSE,
+               font = list(color = "#666")),
+          
+          list(x = 2021, y = 0.9, xref = "x", yref = "paper",
+               text = "Brexit (TCA)", textangle = -45, showarrow = FALSE,
+               font = list(color = "#666")),
+          
+          list(x = 2016, y = 0.95, xref = "x", yref = "paper",
+               text = "Brexit Vote", textangle = -45, showarrow = FALSE,
+               font = list(color = "#666")),
+          
+          list(x = 1979, y = 0.98, xref = "x", yref = "paper",
+               text = "Thatcher Start", textangle = -45, showarrow = FALSE,
+               font = list(color = "#666")),
+          
+          list(x = 1990, y = 0.95, xref = "x", yref = "paper",
+               text = "Thatcher End", textangle = -45, showarrow = FALSE,
+               font = list(color = "#666")),
+          
+          list(x = 1973, y = 0.95, xref = "x", yref = "paper",
+               text = "Joined EEC", textangle = -45, showarrow = FALSE,
+               font = list(color = "#666"))
+        )
+      )
     
   })
   
