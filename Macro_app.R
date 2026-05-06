@@ -8,7 +8,253 @@ macroeconomic_variables_df <- read_csv("data/macroeconomic_variables.csv") %>%
   pivot_longer(cols = -year, names_to = "variable", values_to = "value") %>%
   filter(!is.na(value))
 
-variable_choices <- sort(unique(macroeconomic_variables_df$variable))
+macroeconomic_variables_df <- macroeconomic_variables_df |>
+  mutate(title_i = case_when(variable == "interest_rate" ~ "Interest Rate",
+                             variable == "cpi" ~ "CPI growth rate",
+                             variable == "gdp_deflator_growth" ~ "GDP Deflator Growth Rate",
+                             variable == "pub_sec_deficit_m" ~ "Public Sector Deficit, £m",
+                             variable == "pub_sec_receipts_m" ~ "Public Sector Receipts, £m",
+                             variable == "pub_sec_expenditure_m" ~ "Public Sector Expenditure, £m",
+                             variable == "gdp_deflator_index" ~ "GDP Deflator Index",
+                             variable == "gdp_m" ~ "GDP",
+                             variable == "gdp_growth_rate" ~ "GDP Growth Rate",
+                             variable == "gdp_per_capita" ~ "GDP per Capita",
+                             variable == "capital_account_balance" ~ "Capital Account Balance",
+                             variable == "urban_pop_pct" ~ "Urban Population, % of total",
+                             variable == "life_expectancy" ~ "Life Expectancy",
+                             variable == "mean_household_income" ~ "Mean Household Income",
+                             variable == "median_household_income" ~ "Median Household Income",
+                             variable == "gini_coefficient" ~ "Gini Coefficient",
+                             variable == "ab_poverty_rate" ~ "Absolute Poverty Rate",
+                             variable == "rel_poverty_rate" ~ "Relative Poverty Rate",
+                             variable == "ab_child_poverty_rate" ~ "Absolute Child Poverty Rate",
+                             variable == "rel_child_poverty_rate" ~ "Relative Child Poverty Rate",
+                             variable == "trade_pct_of_gdp" ~ "Trade Intensity",
+                             variable == "unemployment_rate" ~ "Unemployment Rate",
+                             variable == "population" ~ "Population",
+                             variable == "exchg_gbp_into_usd" ~ "Exchange Rate: GBP into USD",
+                             variable == "exchg_gbp_into_eur" ~ "Exchange Rate: GBP into EUR",
+                             variable == "started_dwellings" ~ "Started Dwellings",
+                             variable == "completed_dwellings" ~ "Completed Dwellings",
+                             variable == "exchg_rate_index" ~ "Exchange Rate Index",
+                             variable == "manuf_val_added_pct_of_gdp" ~ "Manufacturing Value Added as a % of GDP",
+                             variable == "pub_sec_net_debt_m" ~ "Public Sector Net Debt, £m",
+                             variable == "pub_sec_net_debt_pct_of_gdp" ~ "Public Sector Net Debt as a % of GDP",
+                             variable == "randd_exp_pct_of_gdp" ~ "R&D expenditure as a % of GDP",
+                             variable == "gfcf" ~ "Gross Fixed Capital Formation, £m",
+                             variable == "exports_total" ~ "Total Exports, £m",
+                             variable == "imports_total" ~ "Total Imports, £m",
+                             variable == "balance_total" ~ "Total Trade Balance, £m",
+                             variable == "goods_imports_total" ~ "Goods Imports, £m",
+                             variable == "goods_exports_total" ~ "Goods Exports, £m",
+                             variable == "goods_balance_total" ~ "Goods Trade Balance, £m",
+                             variable == "goods_balance_eu" ~ "Goods Trade Balance with the EU, £m",
+                             variable == "goods_balance_non_eu" ~ "Goods Trade Balance, non-EU, £m",
+                             variable == "goods_exports_eu" ~ "Goods Exports to the EU, £m",
+                             variable == "goods_imports_eu" ~ "Goods Imports from the EU, £m",
+                             variable == "goods_exports_non_eu" ~ "Goods Exports to non-EU, £m",
+                             variable == "goods_imports_non_eu" ~ "Goods Imports from non-EU, £m",
+                             variable == "services_exports_total" ~ "Services Exports, £m",
+                             variable == "services_imports_total" ~ "Services Imports, £m",
+                             variable == "services_balance_total" ~ "Services Trade Balance, £m",
+                             .default = NA),
+         var_info = case_when(variable == "interest_rate" ~ "yearly average of official Bank rate",
+                              variable == "cpi" ~ "annual growth rate of the consumer price index",
+                              variable == "gdp_deflator_growth" ~ "",
+                              variable == "pub_sec_deficit_m" ~ "real 2023 prices",
+                              variable == "pub_sec_receipts_m" ~ "real 2023 prices",
+                              variable == "pub_sec_expenditure_m" ~ "real 2023 prices",
+                              variable == "gdp_deflator_index" ~ "2023 = 100",
+                              variable == "gdp_m" ~ "£m, real 2023 prices",
+                              variable == "gdp_growth_rate" ~ "",
+                              variable == "gdp_per_capita" ~ "",
+                              variable == "capital_account_balance" ~ "",
+                              variable == "urban_pop_pct" ~ "",
+                              variable == "life_expectancy" ~ "",
+                              variable == "mean_household_income" ~ "net of taxes and inclusive of benefits, equivalised household income, before housing costs, inflation adjusted",
+                              variable == "median_household_income" ~ "net of taxes and inclusive of benefits, equivalised household income, before housing costs, inflation adjusted",
+                              variable == "gini_coefficient" ~ "0 = perfect equality; 1 = perfect inequality",
+                              variable == "ab_poverty_rate" ~ "proportion below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.",
+                              variable == "rel_poverty_rate" ~ "proportion below 60% of the fraction of contemporary median. This is the relative poverty rate.",
+                              variable == "ab_child_poverty_rate" ~ "proportion below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.",
+                              variable == "rel_child_poverty_rate" ~ "proportion below 60% of the fraction of contemporary median. This is the relative poverty rate.",
+                              variable == "trade_pct_of_gdp" ~ "",
+                              variable == "unemployment_rate" ~ "aged 16 and over",
+                              variable == "population" ~ "",
+                              variable == "exchg_gbp_into_usd" ~ "",
+                              variable == "exchg_gbp_into_eur" ~ "",
+                              variable == "started_dwellings" ~ "",
+                              variable == "completed_dwellings" ~ "",
+                              variable == "exchg_rate_index" ~ "",
+                              variable == "manuf_val_added_pct_of_gdp" ~ "",
+                              variable == "pub_sec_net_debt_m" ~ "real 2023 prices",
+                              variable == "pub_sec_net_debt_pct_of_gdp" ~ "",
+                              variable == "randd_exp_pct_of_gdp" ~ "",
+                              variable == "gfcf" ~ "",
+                              variable == "exports_total" ~ "",
+                              variable == "imports_total" ~ "",
+                              variable == "balance_total" ~ "",
+                              variable == "goods_imports_total" ~ "",
+                              variable == "goods_exports_total" ~ "",
+                              variable == "goods_balance_total" ~ "",
+                              variable == "goods_balance_eu" ~ "",
+                              variable == "goods_balance_non_eu" ~ "",
+                              variable == "goods_exports_eu" ~ "",
+                              variable == "goods_imports_eu" ~ "",
+                              variable == "goods_exports_non_eu" ~ "",
+                              variable == "goods_imports_non_eu" ~ "",
+                              variable == "services_exports_total" ~ "",
+                              variable == "services_imports_total" ~ "",
+                              variable == "services_balance_total" ~ "",
+                              .default = NA),
+         var_units = case_when(variable == "interest_rate" ~ "%",
+                               variable ==  "cpi" ~ "%",
+                               variable == "gdp_deflator_growth" ~ "",
+                               variable == "pub_sec_deficit_m" ~ "",
+                               variable == "pub_sec_receipts_m" ~ "",
+                               variable == "pub_sec_expenditure_m" ~ "",
+                               variable == "gdp_deflator_index" ~ "",
+                               variable == "gdp_m" ~ "",
+                               variable == "gdp_growth_rate" ~ "GDP Growth Rate",
+                               variable == "gdp_per_capita" ~ "GDP per Capita",
+                               variable == "capital_account_balance" ~ "",
+                               variable == "urban_pop_pct" ~ "",
+                               variable == "life_expectancy" ~ "",
+                               variable == "mean_household_income" ~ "",
+                               variable == "median_household_income" ~ "",
+                               variable == "gini_coefficient" ~ "",
+                               variable == "poverty_rate" ~ "",
+                               variable == "child_poverty_rate" ~ "",
+                               variable == "trade_pct_of_gdp" ~ "",
+                               variable == "unemployment_rate" ~ "",
+                               variable == "population" ~ "",
+                               variable == "exchg_gbp_into_usd" ~ "",
+                               variable == "exchg_gbp_into_eur" ~ "",
+                               variable == "started_dwellings" ~ "",
+                               variable == "completed_dwellings" ~ "",
+                               variable == "exchg_rate_index" ~ "",
+                               variable == "manuf_val_added_pct_of_gdp" ~ "",
+                               variable == "pub_sec_net_debt_m" ~ "",
+                               variable == "pub_sec_net_debt_pct_of_gdp" ~ "",
+                               variable == "randd_exp_pct_of_gdp" ~ "",
+                               variable == "gfcf" ~ "",
+                               variable == "exports_total" ~ "",
+                               variable == "imports_total" ~ "",
+                               variable == "balance_total" ~ "",
+                               variable == "goods_imports_total" ~ "",
+                               variable == "goods_exports_total" ~ "",
+                               variable == "goods_balance_total" ~ "",
+                               variable == "goods_balance_eu" ~ "",
+                               variable == "goods_balance_non_eu" ~ "",
+                               variable == "goods_exports_eu" ~ "",
+                               variable == "goods_imports_eu" ~ "",
+                               variable == "goods_exports_non_eu" ~ "",
+                               variable == "goods_imports_non_eu" ~ "",
+                               variable == "services_exports_total" ~ "",
+                               variable == "services_imports_total" ~ "",
+                               variable == "services_balance_total" ~ "",
+                               .default = NA),
+         var_source = case_when(variable == "interest_rate" ~ "Bank of England",
+                                variable == "cpi" ~ "ONS",
+                                variable == "gdp_deflator_growth" ~ "",
+                                variable == "pub_sec_deficit_m" ~ "",
+                                variable == "pub_sec_receipts_m" ~ "",
+                                variable == "pub_sec_expenditure_m" ~ "",
+                                variable == "gdp_deflator_index" ~ "",
+                                variable == "gdp_m" ~ "",
+                                variable == "gdp_growth_rate" ~ "GDP Growth Rate",
+                                variable == "gdp_per_capita" ~ "GDP per Capita",
+                                variable == "capital_account_balance" ~ "",
+                                variable == "urban_pop_pct" ~ "",
+                                variable == "life_expectancy" ~ "",
+                                variable == "mean_household_income" ~ "",
+                                variable == "median_household_income" ~ "",
+                                variable == "gini_coefficient" ~ "",
+                                variable == "ab_poverty_rate" ~ "",
+                                variable == "rel_poverty_rate" ~ "",
+                                variable == "ab_child_poverty_rate" ~ "",
+                                variable == "rel_child_poverty_rate" ~ "",
+                                variable == "trade_pct_of_gdp" ~ "",
+                                variable == "unemployment_rate" ~ "",
+                                variable == "population" ~ "",
+                                variable == "exchg_gbp_into_usd" ~ "",
+                                variable == "exchg_gbp_into_eur" ~ "",
+                                variable == "started_dwellings" ~ "",
+                                variable == "completed_dwellings" ~ "",
+                                variable == "exchg_rate_index" ~ "",
+                                variable == "manuf_val_added_pct_of_gdp" ~ "",
+                                variable == "pub_sec_net_debt_m" ~ "",
+                                variable == "pub_sec_net_debt_pct_of_gdp" ~ "",
+                                variable == "randd_exp_pct_of_gdp" ~ "",
+                                variable == "gfcf" ~ "",
+                                variable == "exports_total" ~ "",
+                                variable == "imports_total" ~ "",
+                                variable == "balance_total" ~ "",
+                                variable == "goods_imports_total" ~ "",
+                                variable == "goods_exports_total" ~ "",
+                                variable == "goods_balance_total" ~ "",
+                                variable == "goods_balance_eu" ~ "",
+                                variable == "goods_balance_non_eu" ~ "",
+                                variable == "goods_exports_eu" ~ "",
+                                variable == "goods_imports_eu" ~ "",
+                                variable == "goods_exports_non_eu" ~ "",
+                                variable == "goods_imports_non_eu" ~ "",
+                                variable == "services_exports_total" ~ "",
+                                variable == "services_imports_total" ~ "",
+                                variable == "services_balance_total" ~ "",
+                                .default = NA),
+         var_url = case_when(variable == "interest_rate" ~ "url",
+                             variable == "cpi" ~ "url",
+                             variable == "gdp_deflator_growth" ~ "",
+                             variable == "pub_sec_deficit_m" ~ "",
+                             variable == "pub_sec_receipts_m" ~ "",
+                             variable == "pub_sec_expenditure_m" ~ "",
+                             variable == "gdp_deflator_index" ~ "",
+                             variable == "gdp_m" ~ "",
+                             variable == "gdp_growth_rate" ~ "GDP Growth Rate",
+                             variable == "gdp_per_capita" ~ "GDP per Capita",
+                             variable == "capital_account_balance" ~ "",
+                             variable == "urban_pop_pct" ~ "",
+                             variable == "life_expectancy" ~ "",
+                             variable == "mean_household_income" ~ "",
+                             variable == "median_household_income" ~ "",
+                             variable == "gini_coefficient" ~ "",
+                             variable == "ab_poverty_rate" ~ "",
+                             variable == "rel_poverty_rate" ~ "",
+                             variable == "ab_child_poverty_rate" ~ "",
+                             variable == "rel_child_poverty_rate" ~ "",
+                             variable == "trade_pct_of_gdp" ~ "",
+                             variable == "unemployment_rate" ~ "",
+                             variable == "population" ~ "",
+                             variable == "exchg_gbp_into_usd" ~ "",
+                             variable == "exchg_gbp_into_eur" ~ "",
+                             variable == "started_dwellings" ~ "",
+                             variable == "completed_dwellings" ~ "",
+                             variable == "exchg_rate_index" ~ "",
+                             variable == "manuf_val_added_pct_of_gdp" ~ "",
+                             variable == "pub_sec_net_debt_m" ~ "",
+                             variable == "pub_sec_net_debt_pct_of_gdp" ~ "",
+                             variable == "randd_exp_pct_of_gdp" ~ "",
+                             variable == "gfcf" ~ "",
+                             variable == "exports_total" ~ "",
+                             variable == "imports_total" ~ "",
+                             variable == "balance_total" ~ "",
+                             variable == "goods_imports_total" ~ "",
+                             variable == "goods_exports_total" ~ "",
+                             variable == "goods_balance_total" ~ "",
+                             variable == "goods_balance_eu" ~ "",
+                             variable == "goods_balance_non_eu" ~ "",
+                             variable == "goods_exports_eu" ~ "",
+                             variable == "goods_imports_eu" ~ "",
+                             variable == "goods_exports_non_eu" ~ "",
+                             variable == "goods_imports_non_eu" ~ "",
+                             variable == "services_exports_total" ~ "",
+                             variable == "services_imports_total" ~ "",
+                             variable == "services_balance_total" ~ "",
+                             .default = NA)
+         
+  )
+title_choices <- unique(na.omit(macroeconomic_variables_df$title_i))
 
 ###################  APP ######################
 
@@ -120,25 +366,47 @@ ui <- fluidPage(
              )
     ), # close tab panel
     tabPanel("UK graphs",
-             fluidRow(
-               div(class = "page-container",
-               h2(class = "page-title", "UK Macroeconomic Graphs"),
-               p(class = "barchart-description", 
-                 "This tab allows you to select any key UK macroeconometic indicator from the dropdown and see how trends have changed over time."),
-               
-                 selectInput(
-                   inputId = "Variable",
-                   label = "Choose a variable:",
-                   choices = variable_choices
+             div(class = "page-container",
+                 h2(class = "page-title", "UK Macroeconomic Graphs"),
+                 p(class = "barchart-description", 
+                   "This tab allows you to select any key UK macroeconomic indicator from the dropdown and see how trends have changed over time."),
+                 fluidRow(
+                   column(12,
+                          selectInput(
+                            inputId = "Variable",
+                            label = "Choose a variable:",
+                            choices = title_choices
+                          ),
+                          h3("Graphs:", textOutput("var_description")),
+                          plotlyOutput("chart", width = "100%", height = "600px")
+                   )
                  ),
-               
-                 h3("Graphs:"),
-                 
-                 plotlyOutput("chart", width = "100%", height = "600px")
-                 
-               )# close chart container
-              ) # close fluid
-             ), # close tabPanel
+                   
+                   br(),
+                   br(),
+                   
+                   fluidRow(
+                     column(6,
+                            selectInput(
+                              inputId = "x_var",
+                              label = "Choose x axis variable:",
+                              choices = title_choices
+                            )
+                     ),
+                     column(6,
+                            selectInput(
+                              inputId = "y_var",
+                              label = "Choose y axis variable:",
+                              choices = title_choices
+                            )
+                     ),
+                     
+                     plotlyOutput("chart2", width = "100%", height = "600px")
+                     
+                   )
+             )# close div
+             
+    ), #close tabpanel
     tabPanel( "Correlation Matrix"
       
     )# close tabPanel
@@ -147,20 +415,23 @@ ui <- fluidPage(
 ) #close UI
 
 server <- function(input, output, session) {
-  
+
   output$chart <- renderPlotly({
     
     req(input$Variable)
     
     d <- macroeconomic_variables_df[
-      macroeconomic_variables_df$variable == input$Variable, 
+      macroeconomic_variables_df$title_i == input$Variable, 
     ]
     
     req(nrow(d) > 0)
     
+    units <- d$var_units[1]
+    y_label <- if (!is.na(units) && units != "") units else "value"
+    
     p <- ggplot(d, aes(year, value)) +
       geom_line(color = "#F46A25") +
-      
+      ylab(y_label) +
       geom_vline(xintercept = 2020, linetype = "dashed", color = "#E6A8A1") +
       geom_vline(xintercept = 2021, linetype = "dashed", color = "#A9C1D9") +
       geom_vline(xintercept = 2016, linetype = "dashed", color = "#A4C6D2") +
@@ -199,6 +470,55 @@ server <- function(input, output, session) {
     
   })
   
+  output$var_description <- renderText({
+    req(input$Variable)
+    
+    info <- macroeconomic_variables_df$var_info[
+      macroeconomic_variables_df$title_i == input$Variable
+    ][1]  # [1] to avoid duplicates
+    
+    if (!is.na(info) && info != "") {
+      paste0(info)
+    } else {
+      ""
+    }
+  })
+  
+  output$chart2 <- renderPlotly({
+    
+    req(input$x_var, input$y_var)
+    
+    x_var_clean <- macroeconomic_variables_df$variable[
+      macroeconomic_variables_df$title_i == input$x_var
+    ][1]
+    
+    y_var_clean <- macroeconomic_variables_df$variable[
+      macroeconomic_variables_df$title_i == input$y_var
+    ][1]
+    
+    d <- macroeconomic_variables_df[
+      macroeconomic_variables_df$variable %in% c(x_var_clean, y_var_clean),
+    ]
+    
+    req(nrow(d) > 0)
+    
+    d_wide <- pivot_wider(
+      d,
+      id_cols = year,
+      names_from = variable,
+      values_from = value
+    )
+    
+    ggplotly(
+      ggplot(d_wide, aes(x = .data[[x_var_clean]], y = .data[[y_var_clean]])) +
+        geom_point(color = "#F46A25") +
+        geom_smooth(method = "lm", se = FALSE, color = "#555555") +
+        xlab(input$x_var) +
+        ylab(input$y_var)
+    )
+    
+  })
+
 }
 
 shinyApp(ui = ui, server = server)
