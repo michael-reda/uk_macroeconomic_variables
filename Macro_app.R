@@ -2,6 +2,7 @@ library(tidyverse)
 library(afcharts)
 library(shiny)
 library(plotly)
+library(corrplot)
 ###################   Data  ###################
 
 macroeconomic_variables_df <- read_csv("data/macroeconomic_variables.csv") %>%
@@ -58,26 +59,26 @@ macroeconomic_variables_df <- macroeconomic_variables_df |>
                              variable == "services_imports_total" ~ "Services Imports, £m",
                              variable == "services_balance_total" ~ "Services Trade Balance, £m",
                              .default = NA),
-         var_info = case_when(variable == "interest_rate" ~ "yearly average of official Bank rate",
+         var_info = case_when(variable == "interest_rate" ~ "The yearly average of official Bank rate",
                               variable == "cpi" ~ "annual growth rate of the consumer price index",
                               variable == "gdp_deflator_growth" ~ "",
-                              variable == "pub_sec_deficit_m" ~ "real 2023 prices",
+                              variable == "pub_sec_deficit_m" ~ "Public sector debt is,,,real 2023 prices",
                               variable == "pub_sec_receipts_m" ~ "real 2023 prices",
                               variable == "pub_sec_expenditure_m" ~ "real 2023 prices",
                               variable == "gdp_deflator_index" ~ "2023 = 100",
                               variable == "gdp_m" ~ "£m, real 2023 prices",
                               variable == "gdp_growth_rate" ~ "",
-                              variable == "gdp_per_capita" ~ "",
+                              variable == "gdp_per_capita" ~ "GDP per capita",
                               variable == "capital_account_balance" ~ "",
                               variable == "urban_pop_pct" ~ "",
                               variable == "life_expectancy" ~ "",
                               variable == "mean_household_income" ~ "net of taxes and inclusive of benefits, equivalised household income, before housing costs, inflation adjusted",
                               variable == "median_household_income" ~ "net of taxes and inclusive of benefits, equivalised household income, before housing costs, inflation adjusted",
                               variable == "gini_coefficient" ~ "0 = perfect equality; 1 = perfect inequality",
-                              variable == "ab_poverty_rate" ~ "proportion below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.",
-                              variable == "rel_poverty_rate" ~ "proportion below 60% of the fraction of contemporary median. This is the relative poverty rate.",
-                              variable == "ab_child_poverty_rate" ~ "proportion below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.",
-                              variable == "rel_child_poverty_rate" ~ "proportion below 60% of the fraction of contemporary median. This is the relative poverty rate.",
+                              variable == "ab_poverty_rate" ~ "Absolute poverty is the proportion of people whose household incomes are below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.",
+                              variable == "rel_poverty_rate" ~ "Relative poverty is proportion of people whose household incomes are below 60% of the contemporary median. This is a poverty line which changes over time to reflect poverty in relation to average living standards.",
+                              variable == "ab_child_poverty_rate" ~ "Absolute child poverty is the proportion of children whose household incomes are below 60% of the inflation adjusted 2010 median income. This is the official absolute poverty rate.",
+                              variable == "rel_child_poverty_rate" ~ "Relative child poverty is proportion of children whose household incomes are below 60% of the contemporary median. This is a poverty line which changes over time to reflect poverty in relation to average living standards.",
                               variable == "trade_pct_of_gdp" ~ "",
                               variable == "unemployment_rate" ~ "aged 16 and over",
                               variable == "population" ~ "",
@@ -254,7 +255,45 @@ macroeconomic_variables_df <- macroeconomic_variables_df |>
                              .default = NA)
          
   )
+
 title_choices <- unique(na.omit(macroeconomic_variables_df$title_i))
+
+# recession
+recessions_df <- tibble::tibble(
+  start = c(1975.25, 1980, 1990.75, 2008.25, 2020),
+  end   = c(1975.75, 1981.25, 1993.25, 2009.5, 2020.5)
+)
+
+#CORRELATION MATRIX
+
+# Example structure
+corr_data <- macroeconomic_variables_df%>%
+  select(year, value, title_i)%>%
+  pivot_wider(names_from = title_i,
+              values_from = value)%>%
+  select(-year)
+
+cor_mat <- cor(corr_data,
+               method = "pearson", 
+               use = "pairwise.complete.obs")
+
+corrplot(cor_mat, 
+         method = "circle", 
+         type = "lower", 
+         tl.col = "black", 
+         tl.cex = 0.8)
+
+corrplot(cor_mat, method = 'color', order = 'alphabet')
+
+corrplot(cor_mat)
+
+n_obs <- function(x, y) sum(complete.cases(x, y))
+obs_matrix <- outer(
+  colnames(corr_data),
+  colnames(corr_data),
+  Vectorize(function(i, j) n_obs(corr_data[[i]], corr_data[[j]]))
+)
+
 
 ###################  APP ######################
 
@@ -371,15 +410,38 @@ ui <- fluidPage(
                  p(class = "barchart-description", 
                    "This tab allows you to select any key UK macroeconomic indicator from the dropdown and see how trends have changed over time."),
                  fluidRow(
-                   column(12,
-                          selectInput(
-                            inputId = "Variable",
-                            label = "Choose a variable:",
-                            choices = title_choices
-                          ),
-                          h3("Graphs:", textOutput("var_description")),
-                          plotlyOutput("chart", width = "100%", height = "600px")
-                   )
+                   tabsetPanel(
+                     
+                     tabPanel(
+                       title = "Solo Graph",
+                       value = "solo",
+                       br(),
+                       p(style = "font-size: 18px;", "Select a variable to view historic data"),
+                       br(),
+                       column(12,
+                              selectInput("Variable", "Choose a variable:", choices = title_choices),
+                              p(textOutput("var_description")),
+                              plotlyOutput("chart", width = "100%", height = "600px")
+                       )
+                     ), #close tab panel 2
+                     
+                     tabPanel(
+                       title = "Comparison Index",
+                       value = "comparison",
+                       br(),
+                       p(style = "font-size: 18px;", "Select multiple variables to compare indexed to 100 at a base year"),
+                       br(),
+                       column(12,
+                              selectInput("CompareVars", "Choose variables to compare:",
+                                          choices  = title_choices,
+                                          multiple = TRUE),
+                              numericInput("BaseYear", "Index base year:", 
+                                           value = 2000, min = 1970, max = 2023, step = 1),
+                              plotlyOutput("chart_comparison", width = "100%", height = "600px")
+                       )
+                     ) #close tab panel 2
+                     
+                   ) # close tabset panel
                  ),
                    
                    br(),
@@ -407,7 +469,10 @@ ui <- fluidPage(
              )# close div
              
     ), #close tabpanel
-    tabPanel( "Correlation Matrix"
+    tabPanel("Correlation Matrix",
+             div(class = "page-container",
+                 h2(class = "page-title", "Macroeconomic correlation matrix")
+             )#close Div
       
     )# close tabPanel
   ) # close tabset panel 
@@ -421,54 +486,85 @@ server <- function(input, output, session) {
     req(input$Variable)
     
     d <- macroeconomic_variables_df[
-      macroeconomic_variables_df$title_i == input$Variable, 
+      macroeconomic_variables_df$title_i == input$Variable,
     ]
     
     req(nrow(d) > 0)
     
     units <- d$var_units[1]
-    y_label <- if (!is.na(units) && units != "") units else "value"
+    y_label <- if (!is.na(units) && units != "") units else "Value"
+    
+    events <- data.frame(
+      x     = c(1973,         1979,             1990,            2016,          2020,       2021),
+      label = c("Joined EEC", "Thatcher Start", "Thatcher End", "Brexit Vote", "COVID-19", "Brexit (TCA)"),
+      color = c("#BFD8C0",    "#C8B6D9",        "#C8B6D9",      "#A4C6D2",    "#E6A8A1",  "#A9C1D9")
+    )
     
     p <- ggplot(d, aes(year, value)) +
+      geom_vline(
+        data        = events,
+        aes(xintercept = x, color = label),
+        linetype    = "dashed",
+        show.legend = FALSE
+      ) +
+      scale_color_manual(values = setNames(events$color, events$label)) +
       geom_line(color = "#F46A25") +
-      ylab(y_label) +
-      geom_vline(xintercept = 2020, linetype = "dashed", color = "#E6A8A1") +
-      geom_vline(xintercept = 2021, linetype = "dashed", color = "#A9C1D9") +
-      geom_vline(xintercept = 2016, linetype = "dashed", color = "#A4C6D2") +
-      geom_vline(xintercept = 1979, linetype = "dashed", color = "#C8B6D9") +
-      geom_vline(xintercept = 1990, linetype = "dashed", color = "#C8B6D9") +
-      geom_vline(xintercept = 1973, linetype = "dashed", color = "#BFD8C0")
+      ylab(y_label)
+    
+    annotations <- lapply(seq_len(nrow(events)), function(i) {
+      list(
+        x         = events$x[i],
+        y         = 0.97,
+        xref      = "x", yref = "paper",
+        text      = events$label[i],
+        textangle = -45,
+        showarrow = FALSE,
+        font      = list(color = "#666666", size = 11)
+      )
+    })
+    
+    ggplotly(p) %>%
+      layout(annotations = annotations)
+    
+  })
+  
+  # --- Comparison index chart -------------------------------------------------
+  output$chart_comparison <- renderPlotly({
+    
+    req(input$CompareVars)
+    req(length(input$CompareVars) >= 2)
+    req(input$BaseYear)
+    
+    # Filter to selected variables
+    d <- macroeconomic_variables_df[
+      macroeconomic_variables_df$title_i %in% input$CompareVars,
+    ]
+    req(nrow(d) > 0)
+    
+    # Index each variable to 100 at base year
+    d <- d %>%
+      group_by(title_i) %>%
+      mutate(
+        base_value = value[year == input$BaseYear],
+        indexed    = (value / base_value) * 100
+      ) %>%
+      filter(!is.na(indexed)) %>%
+      ungroup()
+    
+    p <- ggplot(d, aes(x = year, y = indexed, color = title_i)) +
+      geom_line() +
+      geom_hline(yintercept = 100, linetype = "dashed", color = "#999999") +
+      ylab(paste0("Index (", input$BaseYear, " = 100)")) +
+      labs(color = NULL) +
+      theme(legend.position = "bottom")
     
     ggplotly(p) %>%
       layout(
-        annotations = list(
-          list(x = 2020, y = 0.95, xref = "x", yref = "paper",
-               text = "COVID-19", textangle = -45, showarrow = FALSE,
-               font = list(color = "#666")),
-          
-          list(x = 2021, y = 0.9, xref = "x", yref = "paper",
-               text = "Brexit (TCA)", textangle = -45, showarrow = FALSE,
-               font = list(color = "#666")),
-          
-          list(x = 2016, y = 0.95, xref = "x", yref = "paper",
-               text = "Brexit Vote", textangle = -45, showarrow = FALSE,
-               font = list(color = "#666")),
-          
-          list(x = 1979, y = 0.98, xref = "x", yref = "paper",
-               text = "Thatcher Start", textangle = -45, showarrow = FALSE,
-               font = list(color = "#666")),
-          
-          list(x = 1990, y = 0.95, xref = "x", yref = "paper",
-               text = "Thatcher End", textangle = -45, showarrow = FALSE,
-               font = list(color = "#666")),
-          
-          list(x = 1973, y = 0.95, xref = "x", yref = "paper",
-               text = "Joined EEC", textangle = -45, showarrow = FALSE,
-               font = list(color = "#666"))
-        )
+        legend = list(orientation = "h", x = 0, y = -0.2)
       )
-    
   })
+  
+  #############################################################################
   
   output$var_description <- renderText({
     req(input$Variable)
