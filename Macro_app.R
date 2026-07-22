@@ -468,6 +468,36 @@ ui <- fluidPage(
                        title = "Versus",
                        value = "vs",
                        fluidRow(
+                         column(12,
+                                p(style = "font-size: 18px;",
+                                  "Compare two variables directly against each other over time."),
+                                helpText(
+                                  "Each point is one year. The line connecting points follows chronological order, so you can see the path the relationship has taken over time rather than just a static scatter. The grey trend line is a simple linear fit (OLS) and the correlation coefficient below the chart summarises how closely the two variables move together on a scale from -1 (perfectly opposite) to +1 (perfectly aligned)."
+                                )
+                         ),
+                         
+                         column(12,
+                                checkboxInput(
+                                  "standardise_vs",
+                                  "Standardise variables (z-scores)",
+                                  value = FALSE
+                                ),
+                                helpText(
+                                  "Rescales both variables to the same units - standard deviations from their own mean - so a variable measured in billions and one measured in percentage points can be compared on the same axes without one visually dominating the other. This changes the scale of the chart but does not change the correlation coefficient itself."
+                                )
+                         ),
+                         
+                         column(12,
+                                checkboxInput(
+                                  "diff_vs",
+                                  "Use year-on-year changes (removes spurious trend correlation)",
+                                  value = FALSE
+                                ),
+                                helpText(
+                                  "Two series that both trend over time (e.g. GDP and population) can show a high correlation purely because they share a common upward trend, not because they're actually related. Ticking this box correlates year-on-year changes instead of raw levels, which strips out shared trends and reveals whether the variables genuinely move together from one year to the next. This answers a different question to the levels correlation ('do they move together year to year?' vs 'do they trend together over time?') - it isn't strictly more correct, just a different, trend-robust lens, and it will typically show a lower r than the levels version."
+                                )
+                         ),
+                         
                          column(6,
                                 selectInput(
                                   inputId = "x_var",
@@ -483,10 +513,14 @@ ui <- fluidPage(
                                 )
                          ),
                          
-                         plotlyOutput("chart2", width = "100%", height = "600px")
+                         br(),
                          
+                         column(12,
+                                plotlyOutput("chart2", width = "100%", height = "600px"),
+                                verbatimTextOutput("corr_text")
+                         )
                        )
-                     ) #close tab panel 3
+                     ) #close tab panel 3 
                    ) # close tabset panel
                  ) #close fluid row
              )# close div
@@ -590,22 +624,8 @@ server <- function(input, output, session) {
   
   #############################################################################
   
-  output$var_description <- renderText({
-    req(input$Variable)
-    
-    info <- macroeconomic_variables_df$var_info[
-      macroeconomic_variables_df$title_i == input$Variable
-    ][1]  # [1] to avoid duplicates
-    
-    if (!is.na(info) && info != "") {
-      paste0(info)
-    } else {
-      ""
-    }
-  })
-  
-  output$chart2 <- renderPlotly({
-    
+  # Shared reactive for the Versus tab
+  vs_data <- reactive({
     req(input$x_var, input$y_var)
     
     x_var_clean <- macroeconomic_variables_df$variable[
@@ -619,24 +639,97 @@ server <- function(input, output, session) {
     d <- macroeconomic_variables_df[
       macroeconomic_variables_df$variable %in% c(x_var_clean, y_var_clean),
     ]
-    
     req(nrow(d) > 0)
     
     d_wide <- pivot_wider(
-      d,
-      id_cols = year,
-      names_from = variable,
-      values_from = value
+      d, id_cols = year, names_from = variable, values_from = value
+    ) %>%
+      filter(!is.na(.data[[x_var_clean]]), !is.na(.data[[y_var_clean]])) %>%
+      arrange(year)
+    
+    x_lab <- input$x_var
+    y_lab <- input$y_var
+    
+    # Year-on-year differencing to strip out shared time trends before
+    # correlating - guards against spurious correlation between two series
+    # that are each just trending over time.
+    if (isTRUE(input$diff_vs)) {
+      d_wide <- d_wide %>%
+        mutate(
+          !!x_var_clean := .data[[x_var_clean]] - lag(.data[[x_var_clean]]),
+          !!y_var_clean := .data[[y_var_clean]] - lag(.data[[y_var_clean]])
+        ) %>%
+        filter(!is.na(.data[[x_var_clean]]), !is.na(.data[[y_var_clean]]))
+      
+      x_lab <- paste0(x_lab, " (year-on-year change)")
+      y_lab <- paste0(y_lab, " (year-on-year change)")
+    }
+    
+    if (isTRUE(input$standardise_vs)) {
+      d_wide[[x_var_clean]] <- as.numeric(scale(d_wide[[x_var_clean]]))
+      d_wide[[y_var_clean]] <- as.numeric(scale(d_wide[[y_var_clean]]))
+      x_lab <- paste0(x_lab, " (z-score)")
+      y_lab <- paste0(y_lab, " (z-score)")
+    }
+    
+    corr <- cor(
+      d_wide[[x_var_clean]], d_wide[[y_var_clean]],
+      use = "complete.obs", method = "pearson"
     )
     
-    ggplotly(
-      ggplot(d_wide, aes(x = .data[[x_var_clean]], y = .data[[y_var_clean]])) +
-        geom_point(color = "#F46A25") +
-        geom_smooth(method = "lm", se = FALSE, color = "#555555") +
-        xlab(input$x_var) +
-        ylab(input$y_var)
+    list(
+      d_wide = d_wide, x_var_clean = x_var_clean, y_var_clean = y_var_clean,
+      x_lab = x_lab, y_lab = y_lab, corr = corr
     )
+  })
+  
+  output$chart2 <- renderPlotly({
+    vd <- vs_data()
     
+    p <- ggplot(
+      vd$d_wide,
+      aes(x = .data[[vd$x_var_clean]], y = .data[[vd$y_var_clean]])
+    ) +
+      geom_path(colour = "#999999", linewidth = 0.6) +
+      geom_point(aes(color = year)) +
+      scale_color_viridis_c(name = "Year") +
+      geom_smooth(method = "lm", se = FALSE, color = "#555555") +
+      xlab(vd$x_lab) +
+      ylab(vd$y_lab)
+    
+    # When plotting year-on-year changes, one or two shock years (e.g. 2008,
+    # 2020) can be so large they stretch the axes and compress every other
+    # year into a tiny cluster. Zoom the view to a robust range (1st-99th
+    # percentile with a margin) instead of the full data range - outlier
+    # points still exist and are still included in the correlation, they're
+    # just allowed to sit outside the visible window if extreme.
+    if (isTRUE(input$diff_vs)) {
+      
+      x_vals <- vd$d_wide[[vd$x_var_clean]]
+      y_vals <- vd$d_wide[[vd$y_var_clean]]
+      
+      x_range <- quantile(x_vals, probs = c(0.01, 0.99), na.rm = TRUE)
+      y_range <- quantile(y_vals, probs = c(0.01, 0.99), na.rm = TRUE)
+      
+      x_pad <- diff(x_range) * 0.15
+      y_pad <- diff(y_range) * 0.15
+      
+      p <- p + coord_cartesian(
+        xlim = x_range + c(-x_pad, x_pad),
+        ylim = y_range + c(-y_pad, y_pad)
+      )
+    }
+    
+    ggplotly(p)
+  })
+  
+  output$corr_text <- renderText({
+    vd <- vs_data()
+    basis <- if (isTRUE(input$diff_vs)) "year-on-year changes" else "levels"
+    paste0(
+      "Pearson correlation (r), based on ", basis, ": ",
+      round(vd$corr, 3), "  |  n = ", nrow(vd$d_wide)
+    )
   })
 
 }
