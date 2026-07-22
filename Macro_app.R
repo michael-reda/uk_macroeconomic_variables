@@ -3,6 +3,7 @@ library(afcharts)
 library(shiny)
 library(plotly)
 library(corrplot)
+library(rsconnect)
 ###################   Data  ###################
 
 macroeconomic_variables_df <- read_csv("data/macroeconomic_variables.csv") %>%
@@ -62,7 +63,7 @@ macroeconomic_variables_df <- macroeconomic_variables_df |>
          var_info = case_when(variable == "interest_rate" ~ "The yearly average of official Bank rate",
                               variable == "cpi" ~ "annual growth rate of the consumer price index",
                               variable == "gdp_deflator_growth" ~ "",
-                              variable == "pub_sec_deficit_m" ~ "Public sector debt is,,,real 2023 prices",
+                              variable == "pub_sec_deficit_m" ~ "Public sector debt is real 2023 prices",
                               variable == "pub_sec_receipts_m" ~ "real 2023 prices",
                               variable == "pub_sec_expenditure_m" ~ "real 2023 prices",
                               variable == "gdp_deflator_index" ~ "2023 = 100",
@@ -423,7 +424,7 @@ ui <- fluidPage(
                               p(textOutput("var_description")),
                               plotlyOutput("chart", width = "100%", height = "600px")
                        )
-                     ), #close tab panel 2
+                     ), #close tab panel 1
                      
                      tabPanel(
                        title = "Comparison Index",
@@ -431,50 +432,66 @@ ui <- fluidPage(
                        br(),
                        p(style = "font-size: 18px;", "Select multiple variables to compare indexed to 100 at a base year"),
                        br(),
+                       
+                       helpText(
+                         "All selected variables are rebased to 100 in the chosen base year. Values above 100 indicate growth since the base year, while values below 100 indicate a decline. This allows variables measured in different units to be compared on the same chart.
+                          Indexing removes differences in units and scale, making trends easier to compare."
+                       ),
+                       
+                       column(
+                         12,
+                         checkboxInput(
+                           "log_scale",
+                           "Use log scale",
+                           value = FALSE
+                         ),
+                         helpText(
+                           "Log scale makes it easier to compare growth paths when variables have very different growth rates. Equal vertical distances represent equal percentage changes rather than equal absolute index changes."
+                         )
+                       ),
+                       helpText(
+                         "Recommended when comparing variables such as GDP, debt, exports and population over long periods. A log scale highlights relative (%) growth rather than absolute increases."
+                       ),
+                       
                        column(12,
                               selectInput("CompareVars", "Choose variables to compare:",
                                           choices  = title_choices,
                                           multiple = TRUE),
                               numericInput("BaseYear", "Index base year:", 
                                            value = 2000, min = 1970, max = 2023, step = 1),
+                              
                               plotlyOutput("chart_comparison", width = "100%", height = "600px")
                        )
-                     ) #close tab panel 2
+                     ), #close tab panel 2
                      
+                     tabPanel(
+                       title = "Versus",
+                       value = "vs",
+                       fluidRow(
+                         column(6,
+                                selectInput(
+                                  inputId = "x_var",
+                                  label = "Choose x axis variable:",
+                                  choices = title_choices
+                                )
+                         ),
+                         column(6,
+                                selectInput(
+                                  inputId = "y_var",
+                                  label = "Choose y axis variable:",
+                                  choices = title_choices
+                                )
+                         ),
+                         
+                         plotlyOutput("chart2", width = "100%", height = "600px")
+                         
+                       )
+                     ) #close tab panel 3
                    ) # close tabset panel
-                 ),
-                   
-                   br(),
-                   br(),
-                   
-                   fluidRow(
-                     column(6,
-                            selectInput(
-                              inputId = "x_var",
-                              label = "Choose x axis variable:",
-                              choices = title_choices
-                            )
-                     ),
-                     column(6,
-                            selectInput(
-                              inputId = "y_var",
-                              label = "Choose y axis variable:",
-                              choices = title_choices
-                            )
-                     ),
-                     
-                     plotlyOutput("chart2", width = "100%", height = "600px")
-                     
-                   )
+                 ) #close fluid row
              )# close div
              
-    ), #close tabpanel
-    tabPanel("Correlation Matrix",
-             div(class = "page-container",
-                 h2(class = "page-title", "Macroeconomic correlation matrix")
-             )#close Div
-      
-    )# close tabPanel
+    ) #close tabpanel
   ) # close tabset panel 
   
 ) #close UI
@@ -553,10 +570,17 @@ server <- function(input, output, session) {
     
     p <- ggplot(d, aes(x = year, y = indexed, color = title_i)) +
       geom_line() +
-      geom_hline(yintercept = 100, linetype = "dashed", color = "#999999") +
+      geom_hline(yintercept = 100,
+                 linetype = "dashed",
+                 color = "#999999") +
       ylab(paste0("Index (", input$BaseYear, " = 100)")) +
       labs(color = NULL) +
       theme(legend.position = "bottom")
+    
+    if (isTRUE(input$log_scale)) {
+      p <- p +
+        scale_y_log10()
+    }
     
     ggplotly(p) %>%
       layout(
