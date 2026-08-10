@@ -1,0 +1,12 @@
+name: uk_macroeconomic_variables
+title: uk_macroeconomic_variables
+username: Aadam.Akbar@defra.gov.uk
+account: Aadam.Akbar@defra.gov.uk
+server: dash-connect-prd.azure.defra.cloud
+hostUrl: https://dash-connect-prd.azure.defra.cloud/__api__
+appId: 1862
+bundleId: 6349
+url: https://dash-connect-prd.azure.defra.cloud/content/610881b2-220a-4c49-bcde-4966eb12b26e/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

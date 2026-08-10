@@ -303,62 +303,77 @@ ui <- fluidPage(
   # Custom CSS for styling
   tags$head(
     tags$style(HTML("
+
       body {
-        background: white;
+        background: #f8f9fb;
       }
       
-      .page-container {
-        text-align: center;
-        border: 4px solid #b50d3f;
-        padding: 40px;
-        background-color: #ffffff;
-        width: 90%;
-        margin: 50px auto;
-        border-radius: 20px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      /* Hero section */
+      
+      .hero {
+      text-align: center;
+      padding: 60px 40px;
+      margin: 30px auto 40px auto;
+      background: white;
+      border: 3px solid #b50d3f;
+      border-radius: 24px;
+      max-width: 1200px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       }
       
-      .page-title {
-        font-size: 2em;
-        color: #666666;
-        margin-bottom: 20px;
+      .hero-title {
+      font-size: 3rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 15px;
       }
       
-      .barchart-description {
-        font-size: 1.1em;
-        color: #666666;
-        margin-bottom: 30px;
-        line-height: 1.5;
+      .hero-subtitle {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: #6b7280;
+      max-width: 900px;
+      margin: 0 auto;
       }
       
-      /* Title page styles */
-      .title-main {
-        text-align: center;
-        color: #b50d3f;
-        font-size: 2.2em;
-        margin: 30px 0;
-        font-weight: bold;
+      
+      /* Analysis containers */
+      
+      .analysis-card {
+      background: white;
+      border: 3px solid #b50d3f;
+      border-radius: 24px;
+      padding: 30px;
+      margin: 0 auto 30px auto;
+      max-width: 1200px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       }
       
-      .title-section {
-        margin: 30px 0;
-        padding: 15px;
-        border-left: 4px solid #b50d3f;
+      .section-title {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 10px;
+      padding-left: 15px;
+      border-left: 5px solid #b50d3f;
       }
       
-      .title-subhead {
-        color: #666666;
-        font-size: 1.4em;
-        margin-bottom: 10px;
-        font-weight: 600;
+      .section-description {
+      color: #6b7280;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 25px;
       }
       
-      .title-text {
-        color: #555;
-        line-height: 1.5;
+      /* Inputs */
+      
+      .control-section {
+      margin-bottom: 25px;
       }
       
-            /* Footer section styles */
+      
+      /* Footer section styles */
+      
       .footer-section {
         margin-top: 50px;
         padding-top: 30px;
@@ -379,155 +394,131 @@ ui <- fluidPage(
       "))
   ),
   
-  tabsetPanel(
-    tabPanel("UK Macroeconomics",
-             div(style = "padding: 40px;",
-                 h1("UK Macroeconomics", class = "title-main"),
-                 
-                 div(class = "title-section",
-                     h3("Institue of fiscal Studies", class = "title-subhead"),
-                     p("Poverty data", class = "title-text")
-                 ),
-                 
-                 div(class = "title-section",
-                     h3("ONS", class = "title-subhead"),
-                     p("Office for National statistics", class = "title-text")
-                 ),
-                 
-                 # Footer section
-                 div(class = "footer-section",
-                     h4("Data sources & caveats", class = "footer-heading"),
-                     div(class = "footer-content",
-                         p(strong("Data sources:"), "All the data presented is taken from the Bank of England, ONS and Institue for fiscal studies"),
-                         p(strong("Caveats:"), "Think of something"),
-                         p(em("Created by Michael Reda and Aadam Akbar 10/03/2026 | For any further questions please get in contact."))
-                     )
+  div(
+    class = "hero",
+    h1(class = "hero-title",
+      "Historic UK Macroeconometic data"
+    ),
+    
+    p(
+      class = "hero-subtitle",
+      "Use the data visualisations below to investigate historic trends in UK macroeconomic indicators,
+      compare variables using indexed series, and investigate
+      relationships between economic measures."
+    )
+  ),
+  
+  div( ### Title and description ####
+    class = "analysis-card",
+    h2(class = "section-title",
+      "Single Variable Analysis"),
+    p(class = "section-description",
+      "Select an economic indicator and explore its historical trend."),
+    
+    selectInput(
+      "Variable",
+      "Choose a variable:",
+      choices = title_choices
+    ),
+    
+    textOutput("var_description"),
+    plotlyOutput(
+      "chart",
+      height = "600px"
+    )
+  ),
+
+  ######################   INDEXED COMPARISON  ############################  
+  
+  div( ### Title and description ####
+    class = "analysis-card",
+    h2(class = "section-title",
+      "Indexed Comparison"),
+    p(class = "section-description",
+      "Compare multiple economic indicators after rebasing them to a common base year."),
+    
+    p(h4("Using the drop downs below you can compare between multiple varables overtime, choosing a year of comparison to index the variables. " )),
+    
+      checkboxInput(
+        "log_scale",
+        "Use log scale",
+        value = FALSE
+      ),
+      helpText(
+        "Log scale makes it easier to compare growth paths when variables have very different growth rates. Equal vertical distances represent equal percentage changes rather than equal absolute index changes."
+      ),
+    helpText(
+      "This is recommended when comparing variables such as GDP, debt, exports and population over long periods. A log scale highlights relative (%) growth rather than absolute increases."
+    ),
+    selectInput("CompareVars", "Choose variables to compare:",
+                choices  = title_choices,
+                multiple = TRUE),
+    numericInput("BaseYear", "Index base year:",
+                 value = 2000, min = 1970, max = 2023, step = 1),
+    plotlyOutput("chart_comparison", width = "100%", height = "600px")
+
+  ), # close div
+  
+  ######################   CORRELATION COMPARISON  ############################   
+  div(
+    class = "analysis-card",
+    h2(
+      class = "section-title",
+      "Relationship Analysis"
+    ),
+    p(
+      class = "section-description",
+      "Investigate the relationship between two variables using a
+    dynamic scatter plot and correlation statistics."
+    ),
+    
+           p(style = "font-size: 18px;",
+             "Compare two variables directly against each other over time."),
+           helpText(
+             "Each point is one year. The line connecting points follows chronological order, so you can see the path the relationship has taken over time rather than just a static scatter. The grey trend line is a simple linear fit (OLS) and the correlation coefficient below the chart summarises how closely the two variables move together on a scale from -1 (perfectly opposite) to +1 (perfectly aligned)."
+           ),
+    
+           checkboxInput(
+             "standardise_vs",
+             "Standardise variables (z-scores)",
+             value = FALSE),
+           helpText(
+             "Rescales both variables to the same units - standard deviations from their own mean - so a variable measured in billions and one measured in percentage points can be compared on the same axes without one visually dominating the other. This changes the scale of the chart but does not change the correlation coefficient itself."
+           ),
+
+           checkboxInput(
+             "diff_vs",
+             "Use year-on-year changes (removes spurious trend correlation)",
+             value = FALSE),
+           helpText(
+             "Two series that both trend over time (e.g. GDP and population) can show a high correlation purely because they share a common upward trend, not because they're actually related. Ticking this box correlates year-on-year changes instead of raw levels, which strips out shared trends and reveals whether the variables genuinely move together from one year to the next. This answers a different question to the levels correlation ('do they move together year to year?' vs 'do they trend together over time?') - it isn't strictly more correct, just a different, trend-robust lens, and it will typically show a lower r than the levels version."
+           ),
+
+           selectInput(
+             inputId = "x_var",
+             label = "Choose x axis variable:",
+             choices = title_choices),
+
+           selectInput(
+             inputId = "y_var",
+             label = "Choose y axis variable:",
+             choices = title_choices),
+
+    br(),
+    
+           plotlyOutput("chart2", width = "100%", height = "600px"),
+           verbatimTextOutput("corr_text")
+  ), # close div
+  
+             div(class = "footer-section",
+                 h4("Data sources & caveats", class = "footer-heading"),
+                 div(class = "footer-content",
+                     p(strong("Data sources:"), "All the data presented is taken from the Bank of England, ONS and Institue for fiscal studies"),
+                     p(strong("Caveats:"), "Think of something"),
+                     p(em("Created by Michael Reda and Aadam Akbar 10/03/2026 | For any further questions please get in contact."))
                  )
              )
-    ), # close tab panel
-    tabPanel("UK graphs",
-             div(class = "page-container",
-                 h2(class = "page-title", "UK Macroeconomic Graphs"),
-                 p(class = "barchart-description", 
-                   "This tab allows you to select any key UK macroeconomic indicator from the dropdown and see how trends have changed over time."),
-                 fluidRow(
-                   tabsetPanel(
-                     
-                     tabPanel(
-                       title = "Solo Graph",
-                       value = "solo",
-                       br(),
-                       p(style = "font-size: 18px;", "Select a variable to view historic data"),
-                       br(),
-                       column(12,
-                              selectInput("Variable", "Choose a variable:", choices = title_choices),
-                              p(textOutput("var_description")),
-                              plotlyOutput("chart", width = "100%", height = "600px")
-                       )
-                     ), #close tab panel 1
-                     
-                     tabPanel(
-                       title = "Comparison Index",
-                       value = "comparison",
-                       br(),
-                       p(style = "font-size: 18px;", "Select multiple variables to compare indexed to 100 at a base year"),
-                       br(),
-                       
-                       helpText(
-                         "All selected variables are rebased to 100 in the chosen base year. Values above 100 indicate growth since the base year, while values below 100 indicate a decline. This allows variables measured in different units to be compared on the same chart.
-                          Indexing removes differences in units and scale, making trends easier to compare."
-                       ),
-                       
-                       column(
-                         12,
-                         checkboxInput(
-                           "log_scale",
-                           "Use log scale",
-                           value = FALSE
-                         ),
-                         helpText(
-                           "Log scale makes it easier to compare growth paths when variables have very different growth rates. Equal vertical distances represent equal percentage changes rather than equal absolute index changes."
-                         )
-                       ),
-                       helpText(
-                         "Recommended when comparing variables such as GDP, debt, exports and population over long periods. A log scale highlights relative (%) growth rather than absolute increases."
-                       ),
-                       
-                       column(12,
-                              selectInput("CompareVars", "Choose variables to compare:",
-                                          choices  = title_choices,
-                                          multiple = TRUE),
-                              numericInput("BaseYear", "Index base year:", 
-                                           value = 2000, min = 1970, max = 2023, step = 1),
-                              
-                              plotlyOutput("chart_comparison", width = "100%", height = "600px")
-                       )
-                     ), #close tab panel 2
-                     
-                     tabPanel(
-                       title = "Versus",
-                       value = "vs",
-                       fluidRow(
-                         column(12,
-                                p(style = "font-size: 18px;",
-                                  "Compare two variables directly against each other over time."),
-                                helpText(
-                                  "Each point is one year. The line connecting points follows chronological order, so you can see the path the relationship has taken over time rather than just a static scatter. The grey trend line is a simple linear fit (OLS) and the correlation coefficient below the chart summarises how closely the two variables move together on a scale from -1 (perfectly opposite) to +1 (perfectly aligned)."
-                                )
-                         ),
-                         
-                         column(12,
-                                checkboxInput(
-                                  "standardise_vs",
-                                  "Standardise variables (z-scores)",
-                                  value = FALSE
-                                ),
-                                helpText(
-                                  "Rescales both variables to the same units - standard deviations from their own mean - so a variable measured in billions and one measured in percentage points can be compared on the same axes without one visually dominating the other. This changes the scale of the chart but does not change the correlation coefficient itself."
-                                )
-                         ),
-                         
-                         column(12,
-                                checkboxInput(
-                                  "diff_vs",
-                                  "Use year-on-year changes (removes spurious trend correlation)",
-                                  value = FALSE
-                                ),
-                                helpText(
-                                  "Two series that both trend over time (e.g. GDP and population) can show a high correlation purely because they share a common upward trend, not because they're actually related. Ticking this box correlates year-on-year changes instead of raw levels, which strips out shared trends and reveals whether the variables genuinely move together from one year to the next. This answers a different question to the levels correlation ('do they move together year to year?' vs 'do they trend together over time?') - it isn't strictly more correct, just a different, trend-robust lens, and it will typically show a lower r than the levels version."
-                                )
-                         ),
-                         
-                         column(6,
-                                selectInput(
-                                  inputId = "x_var",
-                                  label = "Choose x axis variable:",
-                                  choices = title_choices
-                                )
-                         ),
-                         column(6,
-                                selectInput(
-                                  inputId = "y_var",
-                                  label = "Choose y axis variable:",
-                                  choices = title_choices
-                                )
-                         ),
-                         
-                         br(),
-                         
-                         column(12,
-                                plotlyOutput("chart2", width = "100%", height = "600px"),
-                                verbatimTextOutput("corr_text")
-                         )
-                       )
-                     ) #close tab panel 3 
-                   ) # close tabset panel
-                 ) #close fluid row
-             )# close div
-             
-    ) #close tabpanel
-  ) # close tabset panel 
-  
+
 ) #close UI
 
 server <- function(input, output, session) {
