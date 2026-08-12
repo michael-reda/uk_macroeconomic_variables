@@ -18,7 +18,7 @@ macroeconomic_variables_df <- macroeconomic_variables_df |>
                              variable == "pub_sec_receipts_m" ~ "Public Sector Receipts, £m",
                              variable == "pub_sec_expenditure_m" ~ "Public Sector Expenditure, £m",
                              variable == "gdp_deflator_index" ~ "GDP Deflator Index",
-                             variable == "gdp_m" ~ "GDP",
+                             variable == "gdp_m" ~ "GDP, £m",
                              variable == "gdp_growth_rate" ~ "GDP Growth Rate",
                              variable == "gdp_per_capita" ~ "GDP per Capita",
                              variable == "capital_account_balance" ~ "Capital Account Balance",
@@ -62,11 +62,11 @@ macroeconomic_variables_df <- macroeconomic_variables_df |>
                              .default = NA),
          var_info = case_when(variable == "interest_rate" ~ "The yearly average of official Bank rate",
                               variable == "cpi" ~ "annual growth rate of the consumer price index",
-                              variable == "gdp_deflator_growth" ~ "",
+                              variable == "gdp_deflator_growth" ~ "This rate of change is calculated by dividing the nominal GDP by real GDP, measuring the overall rate of price change for all domestic goods and services in an economy. This helps to discern real economic growth from inflation.",
                               variable == "pub_sec_deficit_m" ~ "Public sector debt is real 2023 prices",
                               variable == "pub_sec_receipts_m" ~ "real 2023 prices",
                               variable == "pub_sec_expenditure_m" ~ "real 2023 prices",
-                              variable == "gdp_deflator_index" ~ "2023 = 100",
+                              variable == "gdp_deflator_index" ~ "This deflator measure sets 2023 = 100 as a baseline for comparison.",
                               variable == "gdp_m" ~ "£m, real 2023 prices",
                               variable == "gdp_growth_rate" ~ "",
                               variable == "gdp_per_capita" ~ "GDP per capita",
@@ -158,7 +158,7 @@ macroeconomic_variables_df <- macroeconomic_variables_df |>
                                .default = NA),
          var_source = case_when(variable == "interest_rate" ~ "Bank of England",
                                 variable == "cpi" ~ "ONS",
-                                variable == "gdp_deflator_growth" ~ "",
+                                variable == "gdp_deflator_growth" ~ "ONS",
                                 variable == "pub_sec_deficit_m" ~ "",
                                 variable == "pub_sec_receipts_m" ~ "",
                                 variable == "pub_sec_expenditure_m" ~ "",
@@ -421,11 +421,18 @@ ui <- fluidPage(
       choices = title_choices
     ),
     
-    textOutput("var_description"),
-    plotlyOutput(
-      "chart",
-      height = "600px"
-    )
+    h3(textOutput("var_title")),
+
+    p(class = "section-description",
+      textOutput("var_description")
+      ),
+    
+    tags$small(
+      strong("Source: "),
+      textOutput("var_source", inline = TRUE)
+    ),
+    
+    plotlyOutput("chart", height = "600px")
   ),
 
   ######################   INDEXED COMPARISON  ############################  
@@ -544,14 +551,17 @@ server <- function(input, output, session) {
     
     p <- ggplot(d, aes(year, value)) +
       geom_vline(
-        data        = events,
+        data = events,
         aes(xintercept = x, color = label),
         linetype    = "dashed",
         show.legend = FALSE
       ) +
       scale_color_manual(values = setNames(events$color, events$label)) +
       geom_line(color = "#F46A25") +
-      ylab(y_label)
+      ylab(y_label)+
+      labs(
+        x = "Year"
+      )
     
     annotations <- lapply(seq_len(nrow(events)), function(i) {
       list(
@@ -567,6 +577,46 @@ server <- function(input, output, session) {
     
     ggplotly(p) %>%
       layout(annotations = annotations)
+    
+  })
+  
+  output$var_title <- renderText({
+    
+    req(input$Variable)
+    
+    d <- macroeconomic_variables_df[
+      macroeconomic_variables_df$title_i == input$Variable,
+    ]
+    
+    d$title_i[1]
+    
+  })
+  
+  output$var_description <- renderText({
+    
+    req(input$Variable)
+    
+    d <- macroeconomic_variables_df[
+      macroeconomic_variables_df$title_i == input$Variable,
+    ]
+    
+    ifelse(
+      is.na(d$var_info[1]) || d$var_info[1] == "",
+      "",
+      d$var_info[1]
+    )
+    
+  })
+  
+  output$var_source <- renderText({
+    
+    req(input$Variable)
+    
+    d <- macroeconomic_variables_df[
+      macroeconomic_variables_df$title_i == input$Variable,
+    ]
+    
+    d$var_source[1]
     
   })
   
@@ -681,7 +731,6 @@ server <- function(input, output, session) {
       vd$d_wide,
       aes(x = .data[[vd$x_var_clean]], y = .data[[vd$y_var_clean]])
     ) +
-      geom_path(colour = "#999999", linewidth = 0.6) +
       geom_point(aes(color = year)) +
       scale_color_viridis_c(name = "Year") +
       geom_smooth(method = "lm", se = FALSE, color = "#555555") +
